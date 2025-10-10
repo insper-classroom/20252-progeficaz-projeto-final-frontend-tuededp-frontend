@@ -1,0 +1,24 @@
+{
+  "name": "20252-progeficaz-projeto-final-frontend-tuededp-frontend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/insper-classroom/20252-progeficaz-projeto-final-frontend-tuededp-frontend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/insper-classroom/20252-progeficaz-projeto-final-frontend-tuededp-frontend/issues"
+  },
+  "homepage": "https://github.com/insper-classroom/20252-progeficaz-projeto-final-frontend-tuededp-frontend#readme",
+  "dependencies": {
+    "react": "^19.2.0",
+    "vite": "^7.1.9"
+  }
+}

@@ -9,8 +9,9 @@ itsdangerous==2.2.0
 Jinja2==3.1.6
 MarkupSafe==3.0.3
 node==1.2.2
+npm==0.1.1
 odict==1.9.0
-optional-django==0.3.0
+optional-django==0.1.0
 packaging==25.0
 pluggy==1.6.0
 plumber==1.7
