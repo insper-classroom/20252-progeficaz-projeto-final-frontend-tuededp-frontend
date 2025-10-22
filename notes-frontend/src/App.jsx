@@ -5,6 +5,7 @@ import Home from './pages/home/home'
 import DashboardAluno from './pages/dashboard-aluno/dashboard-aluno'
 import DashboardProfessor from './pages/dashboard-professor/dashboard-professor'
 import './App.css'
+import PerfilProfessor from "./components/cadastro";
 
 function App() {
   return (
@@ -21,4 +22,4 @@ function App() {
   )
 }
 
-export default App
+export default App;
