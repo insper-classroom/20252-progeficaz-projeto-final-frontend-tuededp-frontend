@@ -1,81 +1,132 @@
-/* Home Styles */
-.home-container {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: #F8FAFC;
+/* src/pages/home.css */
+/* ===== TOKENS ===== */
+:root{
+  --brand:#0A66C2;  /* Azul LinkedIn */
+  --ink:#0F1728;
+  --muted:#475467;
+  --line:#E4E7EC;
+  --panel:#F5F7FA;
+  --bg:#FFFFFF;
+  --radius-lg:28px;
+  --radius-md:16px;
 }
 
-.home-main {
-  flex: 1;
-  padding: 40px 20px;
+*{box-sizing:border-box}
+img{max-width:100%;display:block}
+
+/* ===== HERO ===== */
+.ll-hero{
+  background:var(--panel);
+  position:relative;
+  overflow:clip;
+}
+.ll-hero__container{
+  max-width:1240px;
+  margin:0 auto;
+  padding:72px 24px;
+  display:grid;
+  grid-template-columns: minmax(420px, 56%) minmax(360px, 44%);
+  gap:56px;
+  align-items:center;
 }
 
-.home-content {
-  max-width: 1200px;
-  margin: 0 auto;
+/* Título / texto */
+.ll-hero__title{
+  font-size:clamp(36px,5vw,56px);
+  line-height:1.08;
+  letter-spacing:-.3px;
+  margin:0 0 14px;
+  color:var(--ink);
+}
+.ll-hero__subtitle{
+  font-size:18px;
+  color:var(--muted);
+  max-width:60ch;
+  margin:0 0 22px;
 }
 
-.home-content h1 {
-  font-size: 32px;
-  color: #1E40AF;
-  margin-bottom: 10px;
-  font-weight: bold;
+/* CTAs */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:12px 18px;border-radius:12px;border:1px solid transparent;
+  font-weight:600;cursor:pointer;text-decoration:none;transition:.2s ease;
+}
+.btn--primary{background:var(--brand);color:#fff}
+.btn--primary:hover{filter:brightness(.96)}
+.btn--outline{background:#fff;color:var(--brand);border-color:var(--brand)}
+.btn--outline:hover{background:rgba(10,102,194,.06)}
+.btn--ghost{background:transparent;color:var(--brand)}
+.btn--ghost:hover{background:rgba(10,102,194,.06)}
+.ll-hero__ctas{display:flex;gap:12px;margin-bottom:16px}
+
+/* Busca */
+.ll-search{
+  display:flex;align-items:center;gap:10px;
+  max-width:560px;background:#fff;border:1px solid var(--line);
+  border-radius:12px;padding:10px 12px;
+  box-shadow:0 10px 28px rgba(2,6,23,.06);
+}
+.ll-search:focus-within{box-shadow:0 0 0 3px rgba(10,102,194,.12)}
+.ll-search__icon{width:20px;height:20px;stroke:#98A2B3;fill:none;stroke-width:1.8}
+.ll-search__input{flex:1;border:0;outline:0;font-size:16px;color:var(--ink);background-color: white;}
+.ll-search__input::placeholder{color:#98A2B3}
+
+/* Benefícios */
+.ll-benefits{
+  display:flex;gap:16px;flex-wrap:wrap;list-style:none;
+  padding:0;margin:18px 0 10px;
+}
+.ll-benefits li{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 12px;background:#fff;border:1px solid var(--line);
+  border-radius:999px;color:#1F2937;
+}
+.dot{width:8px;height:8px;background:var(--brand);border-radius:50%;display:inline-block}
+
+/* Confiado por */
+.ll-trusted{display:flex;align-items:center;gap:14px;margin-top:6px}
+.ll-trusted__label{font-size:14px;color:#667085}
+.ll-trusted__logos{display:flex;gap:8px;flex-wrap:wrap}
+.pill{
+  padding:8px 12px;border-radius:999px;border:1px dashed var(--line);
+  color:#98A2B3;font-size:14px;background:#fff;
 }
 
-.home-content p {
-  font-size: 18px;
-  color: #6B7280;
-  margin-bottom: 40px;
+/* ===== FIGURA (posicionamento profissional) ===== */
+.ll-hero__figure{
+  position:relative;
+  isolation:isolate;
+  /* curva/elliptical backdrop tipo LinkedIn */
+}
+.ll-hero__figure::before{
+  content:\"\"; position:absolute; inset:-15% -30% -20% auto;
+  width:140%; height:140%;
+  background:radial-gradient(120% 90% at 90% 50%, #FFFFFF 0%, #FFFFFF 55%, rgba(255,255,255,0) 56%);
+  z-index:0;
+}
+.ll-hero__frame{
+  position:relative; z-index:1;
+  border-radius:var(--radius-lg);
+  overflow:hidden;
+  box-shadow:0 24px 70px rgba(2,6,23,.10);
+  /* mantém proporção estável e deixa a imagem sempre bem enquadrada */
+  aspect-ratio: 16 / 10;
+  margin-bottom: 40%;
+}
+.ll-hero__img{
+  width:100%; height:100%;
+  object-fit:cover;
+  /* foca no rosto/laptop – ajuste fino da “regra dos terços” */
+  object-position: 62% 40%;
+  /* contorno sutil para destacar em fundos claros */
+  outline:1px solid rgba(0,0,0,.03);
 }
 
-.home-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
+/* ===== RESPONSIVO ===== */
+@media (max-width: 1140px){
+  .ll-hero__container{grid-template-columns:1fr;gap:32px;padding:48px 20px}
+  .ll-hero__figure{order:-1}
+  .ll-hero__figure::before{display:none} /* em mobile mostramos a foto inteira */
+  .ll-hero__frame{border-radius:22px;aspect-ratio: 16 / 11}
+  .ll-hero__img{object-position:50% 40%}
 }
-
-.home-card {
-  background: white;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease;
-}
-
-.home-card:hover {
-  transform: translateY(-2px);
-}
-
-.home-card h3 {
-  font-size: 20px;
-  color: #1E40AF;
-  margin-bottom: 10px;
-  font-weight: bold;
-}
-
-.home-card p {
-  color: #6B7280;
-  font-size: 14px;
-  margin: 0;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .home-main {
-    padding: 20px 15px;
-  }
-  
-  .home-content h1 {
-    font-size: 24px;
-  }
-  
-  .home-content p {
-    font-size: 16px;
-  }
-  
-  .home-cards {
-    grid-template-columns: 1fr;
-  }
-}
-  
