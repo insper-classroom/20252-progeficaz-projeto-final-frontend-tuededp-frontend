@@ -22,6 +22,10 @@ const Login = () => {
     }
   };
 
+  const handleSignupClick = () => {
+    window.location.href = '/cadastro';
+  };
+
   return (
     <div className="login-container">
       {/* Header */}
@@ -74,7 +78,11 @@ const Login = () => {
             
             <div className="signup-section">
               <p className="signup-text">Não tem uma conta?</p>
-              <button type="button" className="signup-button">
+              <button 
+                type="button" 
+                className="signup-button"
+                onClick={handleSignupClick}
+              >
                 CRIAR CONTA
               </button>
             </div>
