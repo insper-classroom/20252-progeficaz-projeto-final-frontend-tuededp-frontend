@@ -1,136 +1,115 @@
-/* Header Deslogado Styles */
-.header-deslogado {
-  background: white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  position: relative;
+/* Header Deslogado – clean & minimal */
+
+/* ==== Tokens (usa as mesmas cores do projeto) ==== */
+:root{
+  --brand:#0A66C2;      /* azul de ação */
+  --ink:#0F1728;        /* texto principal */
+  --muted:#475467;      /* texto secundário */
+  --hairline:#EDF1F7;   /* linha/borda suave */
+}
+
+/* ==== Shell do header ==== */
+.header-deslogado{
+  position: sticky;       /* acompanha o scroll */
+  top: 0;
   z-index: 1000;
+  background: rgba(255,255,255,.78);  /* leve transparência */
+  -webkit-backdrop-filter: saturate(160%) blur(10px);
+          backdrop-filter: saturate(160%) blur(10px);
+  border-bottom: 1px solid var(--hairline); /* borda discreta em vez de sombra forte */
 }
 
-.header-content {
-  max-width: 1200px;
+/* Conteúdo centralizado */
+.header-content{
+  max-width: 1240px;
+  height: 72px;                /* um pouco mais baixo: mais elegante */
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 24px;
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: center;
-  height: 80px;
 }
 
-/* Logo Section */
-.logo-section {
-  display: flex;
-  align-items: center;
-}
+/* ==== Logo ==== */
+.logo-section{display:flex;align-items:center}
 
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  cursor: pointer;
-  transition: transform 0.2s ease;
+.logo{
+  display:flex; align-items:center; gap:12px;
+  cursor:pointer;
+  transition: transform .18s ease;
+  will-change: transform;
 }
+.logo:hover{ transform: translateY(-1px); }
 
-.logo:hover {
-  transform: scale(1.02);
+.logo-icon{
+  width: 36px; height: 36px;
+  display:grid; place-items:center;
 }
+.logo-icon img{ width:100%; height:100%; object-fit:contain; }
 
-.logo-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-}
-
-.logo-icon img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.logo-text {
-  font-size: 28px;
-  font-weight: bold;
-  color: #1F2937;
-  letter-spacing: 1px;
-  font-family: 'Arial', sans-serif;
+.logo-text{
+  font-family: "Montserrat", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  font-weight: 800;
+  letter-spacing: .18em;             /* mantém o “E S T U D A Í” espaçado */
+  font-size: 22px;
+  color: var(--ink);
   text-transform: uppercase;
+  line-height: 1;
+  user-select: none;
 }
 
-/* Entrar Button */
-.entrar-button {
-  background: white;
-  border: 2px solid #60A5FA;
-  color: #3B82F6;
-  padding: 12px 32px;
-  border-radius: 30px;
-  font-size: 16px;
+/* ==== Botão Entrar (outline pill) ==== */
+.entrar-button{
+  appearance: none;
+  font-family: "Montserrat", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
   font-weight: 600;
+  font-size: 15px;
+  letter-spacing: .2px;
+
+  padding: 10px 22px;
+  min-width: 104px;
+  border-radius: 999px;
+
+  background: #fff;
+  color: var(--brand);
+  border: 1px solid #D6E6FB;        /* outline suave */
+  box-shadow: inset 0 1px 0 #F7FAFE; /* realça o topo sutilmente */
+
+  transition: background .18s ease, color .18s ease, border-color .18s ease, transform .12s ease, box-shadow .18s ease;
   cursor: pointer;
-  transition: all 0.3s ease;
-  font-family: 'Arial', sans-serif;
-  min-width: 100px;
-  letter-spacing: 0.5px;
 }
-
-.entrar-button:hover {
-  background: #3B82F6;
-  color: white;
+.entrar-button:hover{
+  background: var(--brand);
+  color: #fff;
+  border-color: var(--brand);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-  border-color: #3B82F6;
+  box-shadow: 0 8px 22px rgba(10,102,194,.20);
 }
-
-.entrar-button:active {
+.entrar-button:active{
   transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(10,102,194,.18);
+}
+.entrar-button:focus-visible{
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(10,102,194,.25);
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .header-content {
-    padding: 0 15px;
-    height: 70px;
-  }
-  
-  .logo-text {
-    font-size: 24px;
-  }
-  
-  .logo-icon {
-    width: 35px;
-    height: 35px;
-  }
-  
-  .entrar-button {
-    padding: 10px 28px;
-    font-size: 15px;
-    min-width: 90px;
-  }
+/* ==== Acessibilidade (áreas clicáveis confortáveis) ==== */
+.logo, .entrar-button{
+  -webkit-tap-highlight-color: transparent;
 }
 
-@media (max-width: 480px) {
-  .header-content {
-    padding: 0 10px;
-    height: 65px;
-  }
-  
-  .logo-text {
-    font-size: 20px;
-  }
-  
-  .logo-icon {
-    width: 30px;
-    height: 30px;
-  }
-  
-  .logo {
-    gap: 10px;
-  }
-  
-  .entrar-button {
-    padding: 8px 24px;
-    font-size: 14px;
-    min-width: 80px;
-  }
+/* ==== Responsivo ==== */
+@media (max-width: 900px){
+  .header-content{ height: 68px; padding: 0 18px; }
+  .logo-icon{ width: 32px; height: 32px; }
+  .logo-text{ font-size: 20px; letter-spacing: .16em; }
+  .entrar-button{ padding: 9px 18px; min-width: 96px; }
+}
+
+@media (max-width: 560px){
+  .header-content{ height: 64px; padding: 0 14px; }
+  .logo{ gap: 10px; }
+  .logo-text{ font-size: 18px; letter-spacing: .14em; }
+  .entrar-button{ padding: 8px 16px; font-size: 14px; min-width: 88px; }
 }
