@@ -59,24 +59,22 @@
 }
 
 /* ==== Botão Entrar (outline pill) ==== */
-.entrar-button{
-  appearance: none;
-  font-family: "Montserrat", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-  font-weight: 600;
-  font-size: 15px;
-  letter-spacing: .2px;
-
-  padding: 10px 22px;
-  min-width: 104px;
-  border-radius: 999px;
-
-  background: #fff;
-  color: var(--brand);
-  border: 1px solid #D6E6FB;        /* outline suave */
-  box-shadow: inset 0 1px 0 #F7FAFE; /* realça o topo sutilmente */
-
-  transition: background .18s ease, color .18s ease, border-color .18s ease, transform .12s ease, box-shadow .18s ease;
-  cursor: pointer;
+.entrar-button {
+    appearance: none;
+    font-family: "Montserrat", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    margin-left: 87%;
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: .2px;
+    padding: 10px 22px;
+    max-width: 104px;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--brand);
+    border: 1px solid #D6E6FB;
+    box-shadow: inset 0 1px 0 #F7FAFE;
+    transition: background .18s ease, color .18s ease, border-color .18s ease, transform .12s ease, box-shadow .18s ease;
+    cursor: pointer;
 }
 .entrar-button:hover{
   background: var(--brand);
