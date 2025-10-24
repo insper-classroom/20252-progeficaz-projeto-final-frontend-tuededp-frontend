@@ -1,0 +1,8 @@
+/* professores-grid/index.css */
+.professores-grid .grid{
+  display:flex; gap:30px; flex-wrap:wrap;
+}
+.see-more{
+  display:block; margin:18px auto 0;
+  background:none; border:none; color:#2C6ECB; font-weight:700; cursor:pointer;
+}

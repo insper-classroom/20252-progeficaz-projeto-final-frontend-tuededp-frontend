@@ -1,0 +1,22 @@
+/* section-title/index.css */
+.section-title{
+  display:grid;
+  grid-template-columns: 1fr auto;
+  align-items:end;
+  gap:24px;
+  margin: 8px 0 20px;
+}
+.section-title h2{
+  font-size: 40px; font-weight: 700; color:#0A3167;
+  line-height: 1.1; margin:0;
+}
+.section-title .rule{
+  grid-column: 1 / -1;
+  height: 4px; width: 220px; background:#2C6ECB; border-radius: 999px;
+  margin-top: 8px;
+}
+.section-title .right{ justify-self:end; }
+@media (max-width: 768px){
+  .section-title h2{ font-size:28px; }
+  .section-title .rule{ width:160px; }
+}

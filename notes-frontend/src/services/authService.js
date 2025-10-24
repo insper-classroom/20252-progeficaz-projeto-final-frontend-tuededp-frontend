@@ -17,7 +17,6 @@ export function isLoggedIn() {
   return !!getToken();
 }
 
-// ✅ NOVO: atualiza somente o usuário no localStorage (e notifica a UI)
 export function setUser(nextUser) {
   if (nextUser) {
     localStorage.setItem("user", JSON.stringify(nextUser));

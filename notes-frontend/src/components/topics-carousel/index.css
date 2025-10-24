@@ -1,0 +1,32 @@
+/* Bloco do carrossel */
+.topics-block{ position:relative; }
+
+/* Trilho horizontal */
+.scroller{
+  display:flex; gap:18px;              /* cards mais próximos */
+  overflow-x:auto; overflow-y:hidden;
+  scroll-snap-type:x mandatory;
+  padding: 6px 8px 14px;               /* menos padding vertical */
+  -webkit-overflow-scrolling: touch;
+  width: 165%;
+}
+
+/* Esconde scroll sem quebrar acessibilidade */
+.scroller::-webkit-scrollbar{ height:8px; }
+.scroller::-webkit-scrollbar-thumb{ background:transparent; }
+
+/* Cada item gruda no início ao parar o scroll */
+.scroller > *{ scroll-snap-align:start; flex:0 0 auto; }
+
+/* Setas embaixo, centralizadas */
+.arrows{
+  display:flex; justify-content:center; gap:24px; margin-top:4px;
+      margin-right: -63%;
+
+}
+.arrows button{
+  font-size:26px; line-height:1;
+  background:none; border:none; color:#2C6ECB; cursor:pointer;
+  padding:4px 8px; border-radius:8px;
+}
+.arrows button:hover{ background:rgba(44,110,203,.08); }

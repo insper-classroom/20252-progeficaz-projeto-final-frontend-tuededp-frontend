@@ -1,0 +1,10 @@
+/* review-card/index.css */
+.review-card{
+  width: 300px; border:1px solid #E5E7EB; border-radius:10px; background:#fff; padding:14px;
+  box-shadow: 0 2px 6px rgba(16,24,40,.04);
+}
+.review-card .stars{ letter-spacing: 2px; color:#111827; opacity:.9; }
+.review-card .sub{ color:#6B7280; margin:6px 0 10px; }
+.reviewer{ display:flex; gap:10px; align-items:center; }
+.reviewer img{ width:24px; height:24px; border-radius:50%; }
+.reviewer .date{ color:#9CA3AF; font-size:12px; }
