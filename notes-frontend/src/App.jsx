@@ -1,6 +1,9 @@
 import React from 'react'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 import Login from './pages/login/login'
+import Cadastro from "./pages/cadastro/cadastro";
+import CadastroAluno from "./pages/cadastro/cadastro_aluno/cadastro_aluno";
+import CadastroProfessor from "./pages/cadastro/cadastro_professor/cadastro_professor";
 import Home from './pages/home/home'
 import DashboardAluno from './pages/dashboard-aluno/dashboard-aluno'
 import DashboardProfessor from './pages/dashboard-professor/dashboard-professor'
