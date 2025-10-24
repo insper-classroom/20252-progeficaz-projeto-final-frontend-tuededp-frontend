@@ -6,6 +6,7 @@ import DashboardAluno from './pages/dashboard-aluno/dashboard-aluno'
 import DashboardProfessor from './pages/dashboard-professor/dashboard-professor'
 import './App.css'
 import PerfilProfessor from "./components/cadastro";
+import PerfilAluno from './components/perfil-aluno'
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard-aluno" element={<DashboardAluno />} />
           <Route path="/dashboard-professor" element={<DashboardProfessor />} />
+          <Route path="/perfil-aluno" element={<PerfilAluno />} />
         </Routes>
       </div>
     </Router>

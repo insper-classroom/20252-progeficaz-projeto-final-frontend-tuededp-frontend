@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { logout } from '../../services/authService';
+import logo from '../../assets/logo_estudai.jpg';
+import { useNavigate } from 'react-router-dom';
 import './index.css';
 
 const HeaderLogado = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -13,14 +16,28 @@ const HeaderLogado = () => {
     logout();
   };
 
+  const handleLogoClick = () => {
+    navigate('/');
+  };
+
+  const handleProfile = () => {
+    navigate('/perfil-aluno')
+  }
+
+  const handleDashboard = () => {
+    navigate('/dashboard-aluno')
+  }
+  
   return (
     <header className="header-logado">
       <div className="header-content">
         {/* Logo */}
         <div className="logo-section">
-          <div className="logo">
-            <div className="logo-icon">🎓</div>
-            <span className="logo-text">ESTUDAÍ</span>
+          <div className="logo" onClick={handleLogoClick}>
+            <div className="logo-icon">
+              <img src={logo} alt="ESTUDAÍ" />
+            </div>
+            <span className="logo-text">E S T U D A Í</span>
           </div>
         </div>
 
@@ -36,7 +53,7 @@ const HeaderLogado = () => {
           </button>
 
           {/* Profile Icon */}
-          <button className="icon-button profile-btn" aria-label="Perfil">
+          <button className="icon-button profile-btn" aria-label="Perfil" onClick={handleProfile}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
               <circle cx="12" cy="7" r="4"/>
@@ -59,13 +76,13 @@ const HeaderLogado = () => {
         {isMenuOpen && (
           <div className="dropdown-menu">
             <div className="dropdown-content">
-              <a href="#" className="dropdown-item">
+              <button onClick={handleDashboard} className="dropdown-item">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                   <polyline points="9,22 9,12 15,12 15,22"/>
                 </svg>
                 Dashboard
-              </a>
+              </button>
               <a href="#" className="dropdown-item">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>

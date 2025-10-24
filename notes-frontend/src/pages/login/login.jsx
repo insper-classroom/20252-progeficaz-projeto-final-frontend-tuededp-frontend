@@ -1,91 +1,101 @@
-import React, { useState } from 'react';
-import HeaderDeslogado from '../../components/header-deslogado';
-import Footer from '../../components/footer';
-import { login } from '../../services/authService';
-import './login.css';
+import React from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { login } from "../../services/authService";
+import HeaderDeslogado from "../../components/header-deslogado";
+import Footer from "../../components/footer";
+import "./login.css";
 
-const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+export default function Login() {
+  const navigate = useNavigate();
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState("");
 
-  const handleSubmit = async (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
+    setError("");
     setLoading(true);
-    
-    try {
-      await login(email, password);
-    } catch (error) {
-      console.error('Erro no login:', error);
-    } finally {
-      setLoading(false);
+
+    // seu backend espera { email, senha }
+    const res = await login(email, password);
+    setLoading(false);
+
+    if (!res.success) {
+      setError(res.error || "Email ou senha inválidos");
+      return;
     }
-  };
+
+    // vai para a Home (HeaderLogado aparece automaticamente)
+    navigate("/");
+  }
 
   return (
-    <div className="login-container">
-      {/* Header */}
+    <div className="page-auth">
       <HeaderDeslogado />
 
-      {/* Main Content */}
-      <main className="main-content">
-        <div className="login-card">
-          <h1 className="login-title">Login</h1>
-          <p className="login-subtitle">Acesse sua conta para continuar</p>
-          
-          <form onSubmit={handleSubmit} className="login-form">
-            <div className="form-group">
-              <label htmlFor="email" className="form-label">E-mail:</label>
+      <main className="auth-main">
+        <section className="auth-card">
+          <header className="auth-head">
+            <h1>Entrar</h1>
+            <p>Acesse sua conta para continuar seus estudos.</p>
+          </header>
+
+          {error && (
+            <div className="auth-alert auth-alert--error" role="alert">
+              {error}
+            </div>
+          )}
+
+          <form className="auth-form" onSubmit={handleSubmit} noValidate>
+            <div className="field">
+              <label htmlFor="email">E-mail</label>
               <input
-                type="email"
                 id="email"
+                type="email"
+                inputMode="email"
+                placeholder="nome@exemplo.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Digite seu email"
-                className="form-input"
                 required
+                autoComplete="username"
               />
             </div>
-            
-            <div className="form-group">
-              <label htmlFor="password" className="form-label">Senha:</label>
+
+            <div className="field">
+              <label htmlFor="password">Senha</label>
               <input
-                type="password"
                 id="password"
+                type="password"
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Digite sua senha"
-                className="form-input"
                 required
+                autoComplete="current-password"
               />
             </div>
-            
-            <div className="forgot-password">
-              <a href="#" className="forgot-link">Esqueceu sua senha?</a>
-            </div>
-            
-            <button 
-              type="submit" 
-              className="login-button"
-              disabled={loading}
-            >
-              {loading ? 'ENTRANDO...' : 'ENTRAR'}
+
+            <button className="btn btn--primary auth-submit" type="submit" disabled={loading}>
+              {loading ? "Entrando..." : "Entrar"}
             </button>
-            
-            <div className="signup-section">
-              <p className="signup-text">Não tem uma conta?</p>
-              <button type="button" className="signup-button">
-                CRIAR CONTA
-              </button>
+
+            <div className="auth-meta">
+              <span className="muted">Ainda não tem conta?</span>{" "}
+              <Link to="/cadastro" className="link">Criar conta</Link>
             </div>
           </form>
-        </div>
+        </section>
+
+        {/* Lado visual (opcional) para manter o “clima LinkedIn Learning” */}
+        <aside className="auth-figure" aria-hidden="true">
+          <div className="figure-card">
+            <h3>Aprenda no seu ritmo</h3>
+            <p>Trilhas, aulas curtas, certificados e professores verificados.</p>
+          </div>
+        </aside>
       </main>
 
-      {/* Footer */}
       <Footer />
     </div>
   );
-};
-
-export default Login;
+}

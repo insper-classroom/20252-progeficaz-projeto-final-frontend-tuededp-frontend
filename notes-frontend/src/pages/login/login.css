@@ -1,177 +1,140 @@
-/* Reset e configurações gerais */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&display=swap");
+
+/* ===== Tokens (iguais à Home) ===== */
+:root{
+  --brand:#0A66C2;  /* Azul LinkedIn */
+  --ink:#0F1728;
+  --muted:#475467;
+  --line:#E4E7EC;
+  --panel:#F6F8FB;
+  --surface:#FFFFFF;
+  --radius-lg:18px;
+  --radius-md:12px;
 }
 
-.login-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-  display: flex;
-  flex-direction: column;
-  font-family: 'Arial', sans-serif;
+.page-auth{ min-height:100vh; background: var(--panel); display:flex; flex-direction:column; }
+.auth-main{
+  flex:1;
+  display:grid;
+  grid-template-columns: minmax(320px, 520px) 1fr;
+  gap: 32px;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 56px 24px 72px;
+  align-items:center;
+  font-family: "Montserrat", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
 }
 
-
-/* Main Content */
-.main-content {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 40px 20px;
+/* ===== Card de login ===== */
+.auth-card{
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  box-shadow: 0 10px 28px rgba(2,6,23,.06);
+}
+.auth-head h1{
+  margin:0 0 6px;
+  font-weight:700;
+  font-size: clamp(24px, 3.2vw, 28px);
+  color: var(--ink);
+  letter-spacing:-.2px;
+}
+.auth-head p{
+  margin:0 0 16px;
+  color: var(--muted);
+  font-weight:500;
 }
 
-.login-card {
-  background: white;
-  border-radius: 12px;
-  padding: 40px;
-  width: 100%;
-  max-width: 400px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+.auth-form{ display:grid; gap:14px; }
+.field{ display:grid; gap:8px; }
+.field label{
+  font-weight:600; color:#111827; font-size:14px;
 }
-
-.login-title {
-  font-size: 32px;
-  color: #1E40AF;
-  text-align: center;
-  margin-bottom: 8px;
-  font-weight: bold;
-}
-
-.login-subtitle {
-  color: #6B7280;
-  text-align: center;
-  margin-bottom: 30px;
-  font-size: 14px;
-}
-
-/* Form */
-.login-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.form-label {
-  color: #374151;
-  font-weight: 500;
-  font-size: 14px;
-}
-
-.form-input {
-  padding: 12px 16px;
-  border: none;
-  border-radius: 8px;
-  background: #F3F4F6;
-  font-size: 14px;
-  color: #374151;
-  transition: all 0.3s ease;
-}
-
-.form-input:focus {
+.field input{
+  padding: 12px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+  background:#fff;
   outline: none;
-  background: #E5E7EB;
-  box-shadow: 0 0 0 2px #1E40AF;
+  font: 500 15px/1 "Montserrat", system-ui;
+  color: var(--ink);
+  transition: box-shadow .15s ease, border-color .15s ease;
+}
+.field input::placeholder{ color:#98A2B3; }
+.field input:focus{
+  border-color:#BFD7F4;
+  box-shadow:0 0 0 3px rgba(10,102,194,.12);
 }
 
-.form-input::placeholder {
-  color: #9CA3AF;
+.auth-submit{
+  width:100%;
+  margin-top: 4px;
 }
 
-.forgot-password {
-  text-align: right;
-  margin-top: -10px;
+.btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  gap:8px; padding:12px 16px;
+  border-radius: var(--radius-md);
+  border:1px solid transparent;
+  font-weight:600; cursor:pointer; transition:.18s ease;
+}
+.btn--primary{ background: var(--brand); color:#fff; }
+.btn--primary:hover{ filter: brightness(.96); }
+.btn:disabled{ opacity:.7; cursor:not-allowed; }
+
+.auth-alert{
+  padding:10px 12px; border-radius:12px; margin: 10px 0 4px;
+  border:1px solid;
+  font:600 14px/1.4 "Montserrat", system-ui;
+}
+.auth-alert--error{ background:#FEF2F2; border-color:#F5C2C7; color:#991B1B; }
+
+.auth-meta{
+  margin-top:10px; text-align:center; color: var(--muted);
+  font: 500 14px/1.4 "Montserrat", system-ui;
+}
+.auth-meta .link{ color: var(--brand); text-decoration:none; font-weight:600; }
+.auth-meta .link:hover{ text-decoration:underline; }
+
+/* ===== Lado visual (para manter “clima LinkedIn Learning”) ===== */
+.auth-figure{
+  position:relative;
+  height:100%;
+  display:flex; align-items:center; justify-content:center;
+}
+.auth-figure::before{
+  content:"";
+  position:absolute; inset: 0 0 0 20%;
+  background: radial-gradient(120% 90% at 90% 50%, #FFFFFF 0%, #FFFFFF 55%, rgba(255,255,255,0) 56%);
+  opacity:.9;
+}
+.figure-card{
+  position:relative;
+  background: linear-gradient(140deg, #F9FBFF, #F2F7FF);
+  border: 1px solid #E7EEF9;
+  border-radius: 22px;
+  padding: 24px 22px;
+  box-shadow: 0 24px 70px rgba(2,6,23,.10);
+  max-width: 540px;
+}
+.figure-card h3{
+  margin:0 0 6px; color:#0F1728; font-weight:700; font-size:20px;
+}
+.figure-card p{
+  margin:0; color:#475467; font-weight:500;
 }
 
-.forgot-link {
-  color: #6B7280;
-  text-decoration: none;
-  font-size: 14px;
-  transition: color 0.3s ease;
-}
-
-.forgot-link:hover {
-  color: #1E40AF;
-}
-
-.login-button {
-  background: #1E40AF;
-  color: white;
-  border: none;
-  padding: 14px 24px;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.login-button:hover {
-  background: #1D4ED8;
-  transform: translateY(-1px);
-}
-
-.signup-section {
-  text-align: center;
-  margin-top: 20px;
-}
-
-.signup-text {
-  color: #6B7280;
-  margin-bottom: 15px;
-  font-size: 14px;
-}
-
-.signup-button {
-  background: white;
-  color: #1E40AF;
-  border: 2px solid #1E40AF;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.signup-button:hover {
-  background: #1E40AF;
-  color: white;
-}
-
-
-/* Responsividade */
-@media (max-width: 768px) {
-  .login-card {
-    padding: 30px 20px;
-    margin: 20px;
+/* ===== Responsivo ===== */
+@media (max-width: 980px){
+  .auth-main{
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 44px 18px 56px;
   }
-  
-  .footer-nav {
-    gap: 15px;
-  }
-  
-  .nav-link {
-    font-size: 12px;
-  }
-  
-  .header-content {
-    padding: 0 15px;
-  }
-  
-  .logo-text {
-    font-size: 20px;
-  }
+  .auth-figure{ display:none; }
+}
+@media (max-width: 560px){
+  .auth-main{ padding: 32px 14px 48px; }
+  .auth-card{ padding: 22px; }
 }
