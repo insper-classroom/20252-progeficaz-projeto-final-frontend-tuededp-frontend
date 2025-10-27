@@ -51,7 +51,7 @@ export default function CadastroEscolha() {
           <div className="choice-actions">
             <button
               className="btn--outline"
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/')}
               type="button"
             >
               Voltar
