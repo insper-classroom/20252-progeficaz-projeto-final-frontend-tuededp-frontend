@@ -14,8 +14,7 @@
 
 /* trava scroll global e garante 100% de altura */
 html, body, #root { height: 100%; }
-body { overflow: hidden; }
-
+.page-chats { height: 100vh; overflow: hidden; }    
 /* a página ocupa a tela toda (menos o header) */
 .page-chats { min-height: 100%; }
 .chats-wrap {
