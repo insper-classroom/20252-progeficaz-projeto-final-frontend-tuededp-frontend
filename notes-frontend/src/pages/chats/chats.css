@@ -12,6 +12,39 @@
   --header-h: 72px;          /* altura do HeaderLogado */
 }
 
+/* trava scroll global e garante 100% de altura */
+html, body, #root { height: 100%; }
+body { overflow: hidden; }
+
+/* a página ocupa a tela toda (menos o header) */
+.page-chats { min-height: 100%; }
+.chats-wrap {
+  height: calc(100vh - var(--header-h));
+  display: flex;
+  flex: 1;  
+}
+
+/* o grid ocupa 100% da altura disponível */
+.chats-shell {
+  height: 100%;
+  overflow: hidden;          /* impede scroll externo */
+  width: 100%;
+}
+
+/* impede a sidebar inteira de rolar, só as listas internas */
+.chats-aside {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* estas sim podem rolar */
+.search-results { max-height: 220px; overflow: auto; }
+.conversations  { flex: 1;   overflow: auto; }
+
+/* no painel do chat, apenas o stream de mensagens rola */
+.chat-panel  { overflow: hidden; }
+.chat-scroll { flex: 1; height: 100%; overflow: auto; }
+
 /* Página empilhada (header em cima, conteúdo embaixo) */
 .page-chats{
   display:flex;
@@ -30,7 +63,7 @@
 /* Grid de dois painéis limitado ao container */
 .chats-shell{
   display:grid;
-  grid-template-columns: 320px 1fr; /* leve ajuste na sidebar */
+  grid-template-columns: 420px 1fr; /* leve ajuste na sidebar */
   gap: 0;
   height: calc(100vh - var(--header-h));
   background: var(--bg);
@@ -44,7 +77,7 @@
   background:#FFF;
   display:flex;
   flex-direction:column;
-  min-width:280px;
+  min-width:380px;
   border-right:1px solid var(--hair);
 }
 .aside-header{

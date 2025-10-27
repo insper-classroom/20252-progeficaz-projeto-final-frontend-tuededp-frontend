@@ -1,76 +1,95 @@
 // src/services/chatService.js
-import * as Auth from "./authService";   // <— evita sombreamento
+import * as Auth from "./authService";
 
-// Use empty API for Vite proxy (it will proxy /api/* to the backend)
+// Vite proxy: mantém API vazia
 const API = "";
+
+/* ========= helpers ========= */
+function normalizeTs(ts) {
+  if (!ts) return null;
+
+  try {
+    let s = String(ts).trim();
+
+    // "YYYY-MM-DD HH:MM:SS" -> "YYYY-MM-DDTHH:MM:SS"
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(s)) {
+      s = s.replace(" ", "T");
+    }
+
+    // Remove frações de segundo antes de Z ou offset
+    // ex: "2025-10-27T20:38:46.845000+00:00Z" -> "2025-10-27T20:38:46+00:00Z"
+    s = s.replace(/\.\d+(?=(?:Z|[+-]\d{2}:\d{2})?$)/, "");
+
+    // Se tiver offset e também 'Z' ao final (tipo "+00:00Z"), remove o 'Z'
+    s = s.replace(/([+-]\d{2}:\d{2})Z$/, "$1");
+
+    // Garante timezone se não houver
+    if (!/(Z|[+-]\d{2}:\d{2})$/.test(s)) {
+      s = s + "Z";
+    }
+
+    const d = new Date(s);
+    if (isNaN(d.getTime())) {
+      console.warn("[normalizeTs] Invalid server timestamp:", ts, "-> normalized:", s);
+      return null;
+    }
+    return s;
+  } catch (err) {
+    console.warn("[normalizeTs] Error parsing server timestamp:", ts, err);
+    return null;
+  }
+}
 
 /** Fetch com Bearer + JSON + erros detalhados */
 async function authFetchJSON(path, opts = {}) {
-  // Add trailing slash only to the path part, preserving query parameters
-  const [basePath, query] = path.split('?');
-  const normalizedPath = basePath.endsWith('/') ? basePath : `${basePath}/`;
-  const finalPath = query ? `${normalizedPath}?${query}` : normalizedPath;
-  
-  // try Auth.getToken, but fallback to localStorage directly if something odd is happening
+  // Não alterar a barra final para evitar redirects que dropam Authorization
+  const finalPath = String(path);
+
   const token = Auth.getToken?.() || localStorage.getItem("token");
   if (!token) console.warn("[auth] token ausente no localStorage!");
+  console.debug("[authFetchJSON] token present:", !!token);
 
-  // Build headers carefully: support Headers instances, start from caller headers,
-  // ensure Authorization is set unless the caller explicitly provided a non-empty one.
   let callerHeaders = {};
   if (opts.headers instanceof Headers) {
-    // Convert Headers to plain object
-    opts.headers.forEach((v, k) => { callerHeaders[k] = v; });
+    opts.headers.forEach((v, k) => {
+      callerHeaders[k] = v;
+    });
   } else if (opts.headers && typeof opts.headers === "object") {
     callerHeaders = { ...opts.headers };
   }
 
-  const headerKeys = Object.keys(callerHeaders);
-  const authKeyName = headerKeys.find(k => k.toLowerCase() === "authorization");
-  // If caller didn't provide Authorization or provided it empty, attach our token
-  if (token && (!authKeyName || !callerHeaders[authKeyName])) {
+  const authKey = Object.keys(callerHeaders).find((k) => k.toLowerCase() === "authorization");
+  if (token && (!authKey || !callerHeaders[authKey])) {
     callerHeaders["Authorization"] = `Bearer ${token}`;
   }
 
-  // Set Content-Type only when sending a plain JSON body (not FormData) and when not provided
-  const headerKeysLower = Object.keys(callerHeaders).map(k => k.toLowerCase());
-  if (
-    opts.body &&
-    !(opts.body instanceof FormData) &&
-    !headerKeysLower.includes("content-type")
-  ) {
+  const hasContentType = Object.keys(callerHeaders).some(
+    (k) => k.toLowerCase() === "content-type"
+  );
+  if (opts.body && !(opts.body instanceof FormData) && !hasContentType) {
     callerHeaders["Content-Type"] = "application/json";
   }
 
-  // Enhanced debug logging
-  const tokenLen = token ? String(token).length : 0;
-  const tokenFirst10 = token ? `${token.slice(0, 10)}...` : 'null';
-  const authVal = callerHeaders[authKeyName || "Authorization"];
-  const authInfo = authVal ? `present (len=${String(authVal).length})` : "absent";
-  
-  console.debug(
-    "[authFetchJSON] FULL request details:",
-    "\n- path:", path,
-    "\n- token in storage:", tokenLen ? `present (len=${tokenLen})` : "absent",
-    "\n- token preview:", tokenFirst10,
-    "\n- headers:", Object.fromEntries(
-      Object.entries(callerHeaders).map(([k, v]) => 
-        [k, k.toLowerCase() === "authorization" ? `<masked-len-${String(v).length}>` : v]
-      )
-    ),
-    "\n- raw token from Auth.getToken():", Auth.getToken()?.slice(0, 10) + "...",
-    "\n- raw token from localStorage:", localStorage.getItem("token")?.slice(0, 10) + "..."
-  );
+  try {
+    console.debug("[authFetchJSON] fetch", `${API}${finalPath}`, {
+      method: opts.method || "GET",
+      headers: Object.keys(callerHeaders).reduce((acc, k) => {
+        acc[k] = k.toLowerCase() === "authorization" ? "[REDACTED]" : callerHeaders[k];
+        return acc;
+      }, {}),
+    });
+  } catch (e) {
+    // ignore
+  }
 
   let res;
   try {
     res = await fetch(`${API}${finalPath}`, {
-      method: "GET",
+      method: opts.method || "GET",
       ...opts,
       headers: callerHeaders,
     });
   } catch (err) {
-    // Network / CORS failures
     throw new Error(`[authFetchJSON] network error ${path}: ${err.message}`);
   }
 
@@ -78,13 +97,18 @@ async function authFetchJSON(path, opts = {}) {
   let data;
   try {
     data = raw ? JSON.parse(raw) : null;
-  } catch (err) {
-    console.error("[authFetchJSON] JSON parse error:", err, "Raw response:", raw);
+  } catch {
     data = raw;
   }
 
   if (!res.ok) {
-    const detail = typeof data === "string" ? data : (data?.msg || data?.error || JSON.stringify(data));
+    if (res.status === 401) {
+      try {
+        console.warn("[authFetchJSON] 401 — token present:", !!token, "path:", finalPath);
+      } catch (e) {}
+    }
+    const detail =
+      typeof data === "string" ? data : data?.msg || data?.error || JSON.stringify(data);
     throw new Error(`HTTP ${res.status} ${path} → ${detail}`);
   }
   return data;
@@ -113,32 +137,48 @@ export async function searchUsers(q) {
 
   const arr = [];
   if (alunosRes.status === "fulfilled") {
-    const list = Array.isArray(alunosRes.value) ? alunosRes.value : (alunosRes.value.data || []);
-    arr.push(...list.map(u => normalizeUser(u, "aluno")));
+    const list = Array.isArray(alunosRes.value)
+      ? alunosRes.value
+      : alunosRes.value.data || [];
+    arr.push(...list.map((u) => normalizeUser(u, "aluno")));
   }
   if (profsRes.status === "fulfilled") {
-    const list = Array.isArray(profsRes.value) ? profsRes.value : (profsRes.value.data || []);
-    arr.push(...list.map(u => normalizeUser(u, "prof")));
+    const list = Array.isArray(profsRes.value)
+      ? profsRes.value
+      : profsRes.value.data || [];
+    arr.push(...list.map((u) => normalizeUser(u, "prof")));
   }
 
-  const seen = new Set(); const out = [];
+  const seen = new Set();
+  const out = [];
   for (const u of arr) if (!seen.has(u.id)) { seen.add(u.id); out.push(u); }
   return out.slice(0, 12);
 }
 
 /* ============ Conversas ============ */
 export async function getConversations() {
-  const list = await authFetchJSON("/api/chats/");  // Add trailing slash
-  return list.map(c => ({
-    id: c.id || c._id,
-    title: c.other?.nome || c.title || "Conversa",
-    other: c.other ? normalizeUser(c.other, c.other?.tipo) : null,
-    lastMessage: c.last_message || c.lastMessage || null,
-  }));
+  const list = await authFetchJSON("/api/chats/");
+  return list.map((c) => {
+    const lmRaw = c.last_message || c.lastMessage || null;
+    const at = normalizeTs(
+      (lmRaw && (lmRaw.at || lmRaw.created_at || lmRaw.createdAt)) ||
+        c.updated_at ||
+        c.updatedAt ||
+        c.created_at ||
+        c.createdAt ||
+        null
+    );
+    return {
+      id: c.id || c._id,
+      title: c.other?.nome || c.title || "Conversa",
+      other: c.other ? normalizeUser(c.other, c.other?.tipo) : null,
+      lastMessage: lmRaw ? { text: lmRaw.text ?? "", at } : at ? { text: "", at } : null,
+    };
+  });
 }
 
 export async function ensureConversationWith(userId) {
-  const raw = (userId && typeof userId === "object" && userId.$oid) ? userId.$oid : userId;
+  const raw = userId && typeof userId === "object" && userId.$oid ? userId.$oid : userId;
   const idStr = String(raw);
   const c = await authFetchJSON("/api/chats", {
     method: "POST",
@@ -148,20 +188,32 @@ export async function ensureConversationWith(userId) {
     id: c.id || c._id,
     title: c.other?.nome || "Conversa",
     other: c.other ? normalizeUser(c.other, c.other?.tipo) : null,
-    lastMessage: c.last_message || null,
+    lastMessage: c.last_message
+      ? { text: c.last_message.text ?? "", at: normalizeTs(c.last_message.at) }
+      : null,
   };
 }
 
 /* ============ Mensagens ============ */
-export async function getMessages(conversationId) {
-  const list = await authFetchJSON(`/api/chats/${conversationId}/messages`);
-  return list.map(m => ({
-    id: m.id || m._id,
-    fromMe: typeof m.fromMe === "boolean" ? m.fromMe
-           : (m.from === "me" || m.from_is_me === true) || false,
-    text: m.text,
-    at: m.created_at || m.at,
-  }));
+export async function getMessages(conversationId, opts = {}) {
+  const since = opts.since ? `?since=${encodeURIComponent(opts.since)}` : "";
+  const list = await authFetchJSON(`/api/chats/${conversationId}/messages${since}`);
+  return list.map((m) => {
+    // Sempre preferir timestamps do servidor
+    const serverTime = m.at || m.created_at || m.createdAt;
+    const at = serverTime ? normalizeTs(serverTime) : null;
+
+    return {
+      id: m.id || m._id,
+      fromMe:
+        typeof m.fromMe === "boolean"
+          ? m.fromMe
+          : m.from === "me" || m.from_is_me === true || false,
+      text: m.text,
+      at, // normalized server time
+      created_at: at, // manter os dois campos consistentes
+    };
+  });
 }
 
 export async function sendMessage(conversationId, text) {
@@ -169,10 +221,40 @@ export async function sendMessage(conversationId, text) {
     method: "POST",
     body: JSON.stringify({ text }),
   });
+
+  try {
+    console.debug("[sendMessage] server response:", {
+      id: m.id || m._id,
+      hasAt: !!(m.at || m.created_at || m.createdAt),
+      textLen: typeof m.text === "string" ? m.text.length : 0,
+    });
+  } catch (e) {}
+
+  // Sempre usar o horário do servidor
+  const serverTime = m.at || m.created_at || m.createdAt;
+  if (!serverTime) {
+    console.warn(
+      "[sendMessage] Server did not provide timestamp for message; using client time as fallback:",
+      m
+    );
+  }
+  let at = normalizeTs(serverTime);
+  if (!at) {
+    at = new Date().toISOString();
+  }
+
+  if (!m.id && !m._id) {
+    console.warn(
+      "[sendMessage] Server did not return a persistent id for the message; it may not be saved on the server yet.",
+      m
+    );
+  }
+
   return {
-    id: m.id || m._id,
+    id: m.id || m._id || null,
     fromMe: true,
     text: m.text,
-    at: m.created_at || m.at,
+    at, // normalized server time (or client fallback)
+    created_at: at,
   };
 }
