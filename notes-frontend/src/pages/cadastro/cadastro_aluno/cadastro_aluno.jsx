@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import HeaderDeslogado from '../../../components/header-deslogado';
+import { useNavigate } from "react-router-dom";
 import Footer from '../../../components/footer';
 import { cadastrarAluno, validarCEP, formatarCPF, formatarTelefone, formatarCEP } from '../../../services/apiService';
 import './cadastro_aluno.css';
 
 const CadastroAluno = () => {
+  const navigate = useNavigate()
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
@@ -114,7 +116,22 @@ const CadastroAluno = () => {
   return (
     <div className="cadastro-aluno-container">
       <HeaderDeslogado />
-      
+      <div className="voltar-seta" onClick={() => navigate('/cadastro-escolha')} title="Voltar">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="26"
+          height="26"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3.2"  
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M15 18l-6-6 6-6" />
+        </svg>
+      </div>
+
       <main className="main-content">
         <div className="cadastro-card">
           <h1 className="cadastro-title">Cadastro de Aluno</h1>
@@ -341,18 +358,28 @@ const CadastroAluno = () => {
               />
               {errors.senha && <span className="error-message">{errors.senha}</span>}
             </div>
-            
-            <button 
-              type="submit" 
+         <button
+              type="submit"
               className="cadastro-button"
               disabled={loading}
             >
               {loading ? 'CRIANDO CONTA...' : 'CRIAR CONTA DE ALUNO'}
             </button>
+
+            {/* 🔹 Botão Voltar adicionado */}
+            <div style={{ textAlign: 'center', marginTop: '16px' }}>
+              <button
+                type="button"
+                className="btn--outline"
+                onClick={() => navigate('/cadastro-escolha')}
+              >
+                Voltar
+              </button>
+            </div>
           </form>
         </div>
       </main>
-      
+
       <Footer />
     </div>
   );
