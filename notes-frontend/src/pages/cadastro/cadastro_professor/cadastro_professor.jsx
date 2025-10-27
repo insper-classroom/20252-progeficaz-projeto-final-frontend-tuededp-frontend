@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import HeaderDeslogado from '../../../components/header-deslogado';
 import Footer from '../../../components/footer';
+import { useNavigate} from "react-router-dom";
 import { cadastrarProfessor, formatarCPF, formatarTelefone } from '../../../services/apiService';
 import './cadastro_professor.css';
 
 const CadastroProfessor = () => {
+  const navigate = useNavigate()
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
@@ -74,7 +76,23 @@ const CadastroProfessor = () => {
   return (
     <div className="cadastro-professor-container">
       <HeaderDeslogado />
-      
+
+        <div className="voltar-seta" onClick={() => navigate('/cadastro-escolha')} title="Voltar">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="26"
+          height="26"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3.2"  
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M15 18l-6-6 6-6" />
+        </svg>
+      </div>
+
       <main className="main-content">
         <div className="cadastro-card">
           <h1 className="cadastro-title">Cadastro de Professor</h1>
@@ -241,10 +259,20 @@ const CadastroProfessor = () => {
             >
               {loading ? 'CRIANDO CONTA...' : 'CRIAR CONTA DE PROFESSOR'}
             </button>
+           {/* 🔹 Botão Voltar adicionado */}
+            <div style={{ textAlign: 'center', marginTop: '16px' }}>
+              <button
+                type="button"
+                className="btn--outline"
+                onClick={() => navigate('/cadastro-escolha')}
+              >
+                Voltar
+              </button>
+            </div>
           </form>
         </div>
       </main>
-      
+
       <Footer />
     </div>
   );

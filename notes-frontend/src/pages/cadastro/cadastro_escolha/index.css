@@ -1,0 +1,212 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&display=swap");
+
+:root{
+  --brand:#0A66C2;
+  --ink:#0F1728;
+  --muted:#475467;
+  --line:#E4E7EC;
+  --panel:#F6F8FB;
+  --surface:#FFFFFF;
+  --radius-lg:14px;
+  --radius-md:10px;
+  --card-max:640px;
+}
+
+/* Estrutura base */
+.page-auth{
+  min-height:100vh;
+  background:var(--panel);
+  display:flex;
+  flex-direction:column;
+  font-family:"Montserrat", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Área central */
+.choice-main{
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:72px 20px;
+  box-sizing:border-box;
+}
+
+/* Card principal */
+.choice-card{
+  width:100%;
+  max-width:var(--card-max);
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius-lg);
+  padding:28px 32px;
+  box-shadow:0 12px 36px rgba(2,6,23,.05);
+}
+
+/* Cabeçalho */
+.choice-head h1{
+  margin:0 0 6px;
+  font-weight:700;
+  font-size:clamp(22px, 3vw, 28px);
+  color:var(--ink);
+}
+.choice-head p{
+  margin:0 0 14px;
+  color:var(--muted);
+  font-weight:500;
+}
+
+/* Grid das opções */
+.choice-grid{
+  display:flex;
+  gap:16px;
+  justify-content:center;
+  align-items:stretch;
+  margin-top:12px;
+  flex-wrap:wrap;
+}
+
+/* Opções (botões) */
+.choice-option{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  padding:14px 16px;
+  border-radius:12px;
+  border:1px solid var(--line);
+  background:#fff;
+  cursor:pointer;
+  transition:
+    transform 0.25s ease-out,
+    box-shadow 0.25s ease-out,
+    border-color 0.25s ease-out;
+  flex:1 1 45%;
+  min-width:220px;
+  max-width:300px;
+  box-sizing:border-box;
+}
+.choice-option:hover{
+  transform:translateY(-4px);
+  box-shadow:0 14px 36px rgba(2,6,23,.08);
+  border-color:rgba(10,102,194,.12);
+}
+
+/* Ícone circular */
+.choice-badge{
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+  font-weight:700;
+  font-size:16px;
+  flex-shrink:0;
+}
+
+/* Texto das opções */
+.choice-title{
+  margin:0;
+  font-weight:700;
+  color:var(--ink);
+  font-size:15px;
+}
+.choice-desc{
+  margin:6px 0 0;
+  color:var(--muted);
+  font-weight:500;
+  font-size:13px;
+}
+
+/* Botão "Voltar" */
+.choice-actions{
+  margin-top:22px;
+  display:flex;
+  justify-content:center;
+}
+.btn--outline{
+  padding:8px 14px;
+  border-radius:10px;
+  background:transparent;
+  border:1px solid var(--line);
+  color:var(--ink);
+  font-weight:600;
+  cursor:pointer;
+  transition:background-color 0.2s ease;
+}
+.btn--outline:hover{
+  background-color:rgba(10,102,194,0.05);
+}
+
+/* Link "Já tem conta? Entrar" */
+.choice-meta{
+  margin-top:18px;
+  text-align:center;
+  color:var(--muted);
+  font-weight:500;
+}
+.choice-meta .meta-link {
+  position: relative;
+  background: transparent;
+  border: none;
+  color: var(--brand);
+  font-weight: 700;
+  padding: 6px 8px;
+  cursor: pointer;
+  text-decoration: none;
+  outline: none;
+  transition: color 0.25s ease;
+}
+
+/* Linha animada a partir do centro */
+.choice-meta .meta-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 2px;
+  background-color: var(--brand);
+  border-radius: 1px;
+  transform: scaleX(0);
+  transform-origin: center; /* ✨ cresce a partir do meio */
+  transition: transform 0.35s ease;
+}
+
+/* Hover suave: a linha se expande do centro */
+.choice-meta .meta-link:hover,
+.choice-meta .meta-link:focus {
+  color: var(--brand);
+}
+
+.choice-meta .meta-link:hover::after,
+.choice-meta .meta-link:focus::after {
+  transform: scaleX(1);
+}
+
+/* Painel visual (opcional, escondido) */
+.choice-figure{ display:none; }
+
+/* Acessibilidade */
+.choice-option:focus{
+  outline:4px solid rgba(10,102,194,.08);
+  outline-offset:4px;
+}
+
+/* Responsivo */
+@media (max-width:720px){
+  .choice-card{
+    padding:22px;
+    max-width:620px;
+  }
+  .choice-grid{
+    flex-direction:column;
+    gap:12px;
+    align-items:center;
+  }
+  .choice-option{
+    width:100%;
+    max-width:520px;
+    flex-basis:100%;
+  }
+}
