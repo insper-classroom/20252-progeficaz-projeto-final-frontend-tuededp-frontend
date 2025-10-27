@@ -81,7 +81,7 @@ export default function Login() {
 
             <div className="auth-meta">
               <span className="muted">Ainda não tem conta?</span>{" "}
-              <Link to="/cadastro" className="link">Criar conta</Link>
+              <Link to="/cadastro-escolha" className="link">Criar conta</Link>
             </div>
           </form>
         </section>
