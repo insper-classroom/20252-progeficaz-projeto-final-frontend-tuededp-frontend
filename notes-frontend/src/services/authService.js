@@ -26,8 +26,10 @@ export function setUser(nextUser) {
   try { window.dispatchEvent(new Event("storage")); } catch {}
 }
 
-function saveSession({ access_token, user, tipo }) {
-  if (access_token) localStorage.setItem("token", access_token);
+function saveSession({ access_token, token, user, tipo }) {
+  // support backends that return either `access_token` or `token`
+  const tk = access_token || token;
+  if (tk) localStorage.setItem("token", tk);
   if (user) localStorage.setItem("user", JSON.stringify(user));
   if (tipo) localStorage.setItem("tipo", tipo);
   try { window.dispatchEvent(new Event("storage")); } catch {}
@@ -52,6 +54,7 @@ export async function login(email, password) {
     const data = await res.json();
     saveSession({
       access_token: data.access_token,
+      token: data.token,
       user: data.user,
       tipo: data.tipo,
     });
@@ -77,9 +80,10 @@ export async function register(payload) {
     }
 
     const data = await res.json();
-    if (data?.access_token) {
+    if (data?.access_token || data?.token) {
       saveSession({
         access_token: data.access_token,
+        token: data.token,
         user: data.user,
         tipo: data.tipo,
       });
