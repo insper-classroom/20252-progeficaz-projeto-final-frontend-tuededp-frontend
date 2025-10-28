@@ -63,7 +63,7 @@ export default function CadastroEscolha() {
             Já tem conta?{" "}
             <button
               className="link-plain meta-link"
-              onClick={() => navigate("/entrar")}
+              onClick={() => navigate("/login")}
               type="button"
             >
               Entrar
