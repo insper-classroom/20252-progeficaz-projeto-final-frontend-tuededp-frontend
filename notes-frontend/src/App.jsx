@@ -11,6 +11,8 @@ import PerfilProfessor from "./components/cadastro";
 import CadastroEscolha from './pages/cadastro/cadastro_escolha';
 import PerfilAluno from './components/perfil-aluno'
 import ChatsPage from './pages/chats/chats';
+import PerfilPublico from './pages/perfil-publico';
+
 
 function App() {
   return (
@@ -26,6 +28,7 @@ function App() {
           <Route path="/cadastro-professor" element={<CadastroProfessor />} />
           <Route path="/perfil-aluno" element={<PerfilAluno />} />
           <Route path="/chats" element={<ChatsPage />} />
+          <Route path="/aluno/:slug" element={<PerfilPublico />} />
         </Routes>
       </div>
     </Router>
