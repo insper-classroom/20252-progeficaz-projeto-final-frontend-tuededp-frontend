@@ -12,7 +12,9 @@ import "./dashboard-aluno.css";
 export default function DashboardAluno() {
   const user = getUser();
 
-  useEffect(() => { requireAuth(); }, []);
+  useEffect(() => {
+    requireAuth();
+  }, []);
 
   return (
     <div className="dashboard-aluno-container">
@@ -20,39 +22,31 @@ export default function DashboardAluno() {
 
       <main className="dashboard-main">
         <div className="dashboard-content">
-
-          {/* ===== LINHA SUPERIOR (grid-areas) ===== */}
+          {/* ===== LINHA SUPERIOR (Grid Layout) ===== */}
           <div className="row-top">
-            {/* título na 1ª linha/esquerda */}
-            <div className="topics-title">
+            {/* Coluna Esquerda - Tópicos */}
+            <div className="topics-column">
               <SectionTitle>Tópicos em alta</SectionTitle>
-            </div>
-
-            {/* welcome ocupa 1ª e 2ª linha à direita */}
-            <aside className="welcome">
-              <WelcomePanel
-                nome={user?.nome?.split(" ")[0]}
-              />
-            </aside>
-
-            {/* lista/cards na 2ª linha/esquerda */}
-            <div className="topics-list">
               <TopicsCarousel />
             </div>
+
+            {/* Coluna Direita - Welcome Panel */}
+            <aside className="welcome">
+              <WelcomePanel nome={user?.nome?.split(" ")[0]} />
+            </aside>
           </div>
 
-          {/* Professores em alta */}
+          {/* ===== Professores em alta ===== */}
           <section className="prof-section">
             <SectionTitle>Professores em alta</SectionTitle>
             <ProfessoresGrid />
           </section>
 
-          {/* CTA final */}
+          {/* ===== CTA Compartilhar Conhecimento ===== */}
           <section className="cta-section">
             <SectionTitle>Compartilhe seu conhecimento</SectionTitle>
             <CTAShare />
           </section>
-
         </div>
       </main>
 
