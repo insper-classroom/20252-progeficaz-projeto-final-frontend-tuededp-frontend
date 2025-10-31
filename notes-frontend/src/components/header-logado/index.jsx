@@ -58,20 +58,7 @@ const HeaderLogado = () => {
             </svg>
           </button>
 
-          <button className="icon-button" aria-label="Carrinho" onClick={() => navigate("/carrinho")}>
-            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" strokeWidth="2">
-              <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61H19a2 2 0 0 0 2-1.61L23 6H6"/>
-            </svg>
-          </button>
-
-          <button className="icon-button notification-btn" aria-label="Notificações">
-            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" strokeWidth="2">
-              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
-              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-            </svg>
-            <span className="notification-badge">3</span>
-          </button>
+          {/* Carrinho e notificações removidos por solicitação do produto */}
 
           {/* Ícone de usuário abre o dropdown existente */}
           <button
