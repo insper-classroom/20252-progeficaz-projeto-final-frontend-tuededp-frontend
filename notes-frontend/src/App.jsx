@@ -43,9 +43,11 @@ function App() {
           />
           <Route path="/cadastro-aluno" element={<CadastroAluno />} />
           <Route path="/cadastro-professor" element={<CadastroProfessor />} />
+          <Route path="/perfil" element={<PerfilAluno />} />
           <Route path="/perfil-aluno" element={<PerfilAluno />} />
           <Route path="/chats" element={<ChatsPage />} />
           <Route path="/aluno/:slug" element={<PerfilPublico />} />
+          <Route path="/professor/:slug" element={<PerfilPublico />} />
         </Routes>
       </div>
     </Router>

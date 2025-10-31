@@ -23,9 +23,14 @@ export function isLoggedIn() {
 
 export function setUser(nextUser) {
   if (nextUser) {
+    // Garante que o tipo está salvo tanto no objeto quanto no localStorage separado
+    if (nextUser.tipo) {
+      localStorage.setItem("tipo", nextUser.tipo);
+    }
     localStorage.setItem("user", JSON.stringify(nextUser));
   } else {
     localStorage.removeItem("user");
+    localStorage.removeItem("tipo");
   }
   try { window.dispatchEvent(new Event("storage")); } catch {}
 }
