@@ -44,8 +44,6 @@ const HeaderLogado = () => {
 
         {/* Direita: link curto + ícones */}
         <div className="header-right">
-          <a className="cta-link" onClick={() => navigate("/junte-se")} role="button">Junte-se a nós!</a>
-
           <button className="icon-button" aria-label="Mensagens" onClick={() => navigate("/chats")}>
             <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" strokeWidth="2">
               <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>
