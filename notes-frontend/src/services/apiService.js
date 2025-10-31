@@ -110,3 +110,84 @@ export const formatarTelefone = (telefone) => {
 export const formatarCEP = (cep) => {
   return cep.replace(/\D/g, '').replace(/(\d{5})(\d{3})/, '$1-$2');
 };
+
+// Função para buscar agendamentos de um professor
+export const buscarAgendamentosProfessor = async (professorId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/agenda?professor=${professorId}`);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return {
+        success: false,
+        error: errorData.error || `Erro ${response.status}: ${response.statusText}`
+      };
+    }
+    
+    const data = await response.json();
+    return {
+      success: true,
+      data: data.data || []
+    };
+  } catch (error) {
+    console.error('Erro ao buscar agendamentos:', error);
+    return {
+      success: false,
+      error: error.message || 'Erro de conexão'
+    };
+  }
+};
+
+// Função para buscar avaliações de um professor
+export const buscarAvaliacoesProfessor = async (professorId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/avaliacoes?professor=${professorId}`);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return {
+        success: false,
+        error: errorData.error || `Erro ${response.status}: ${response.statusText}`
+      };
+    }
+    
+    const data = await response.json();
+    return {
+      success: true,
+      data: data.data || []
+    };
+  } catch (error) {
+    console.error('Erro ao buscar avaliações:', error);
+    return {
+      success: false,
+      error: error.message || 'Erro de conexão'
+    };
+  }
+};
+
+// Função para buscar estatísticas de avaliações do professor
+export const buscarStatsProfessor = async (professorId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/avaliacoes/professor/${professorId}/stats`);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return {
+        success: false,
+        error: errorData.error || `Erro ${response.status}: ${response.statusText}`
+      };
+    }
+    
+    const data = await response.json();
+    return {
+      success: true,
+      data: data
+    };
+  } catch (error) {
+    console.error('Erro ao buscar estatísticas:', error);
+    return {
+      success: false,
+      error: error.message || 'Erro de conexão'
+    };
+  }
+};
