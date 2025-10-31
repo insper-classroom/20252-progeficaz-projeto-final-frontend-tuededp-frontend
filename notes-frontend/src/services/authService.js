@@ -13,6 +13,10 @@ export function getUser() {
   try { return raw ? JSON.parse(raw) : null; } catch { return null; }
 }
 
+export function getTipo() {
+  return localStorage.getItem("tipo");
+}
+
 export function isLoggedIn() {
   return !!getToken();
 }
