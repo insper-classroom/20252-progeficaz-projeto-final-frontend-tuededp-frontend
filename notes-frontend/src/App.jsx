@@ -13,6 +13,7 @@ import PerfilAluno from './components/perfil-aluno'
 import ChatsPage from './pages/chats/chats';
 import PerfilPublico from './pages/perfil-publico';
 import JunteSeNos from './pages/junte-se-nos/junte-se-nos';
+import ProtectedRoute from './components/ProtectedRoute';
 
 
 function App() {
@@ -24,8 +25,22 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/junte-se-nos" element={<JunteSeNos />} />
           <Route path="/cadastro-escolha" element={<CadastroEscolha />} />
-          <Route path="/dashboard-aluno" element={<DashboardAluno />} />
-          <Route path="/dashboard-professor" element={<DashboardProfessor />} />
+          <Route 
+            path="/dashboard-aluno" 
+            element={
+              <ProtectedRoute requiredTipo="aluno">
+                <DashboardAluno />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/dashboard-professor" 
+            element={
+              <ProtectedRoute requiredTipo="prof">
+                <DashboardProfessor />
+              </ProtectedRoute>
+            } 
+          />
           <Route path="/cadastro-aluno" element={<CadastroAluno />} />
           <Route path="/cadastro-professor" element={<CadastroProfessor />} />
           <Route path="/perfil-aluno" element={<PerfilAluno />} />
