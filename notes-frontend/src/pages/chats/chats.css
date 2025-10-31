@@ -169,3 +169,24 @@ html, body, #root { height: 100%; }
 @media (max-width: 980px){
   .chats-shell{ grid-template-columns: 1fr; border-radius: 0; border: none; }
 }
+
+/* Avatar com imagem */
+.avatar-img {
+  width: 40px; height: 40px; border-radius: 50%;
+  object-fit: cover; background: #fff; border: 1px solid #E4E7EC;
+}
+.avatar-img.sm, .avatar.sm { width: 36px; height: 36px; }
+.avatar-img.lg, .avatar.lg { width: 44px; height: 44px; }
+
+/* Fallback com inicial */
+.avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-weight: 700; color: #0F1728;
+  background: #F2F4F7; border: 1px solid #E4E7EC;
+}
+.avatar.sm { width: 36px; height: 36px; font-size: 14px; }
+.avatar.lg { width: 44px; height: 44px; font-size: 16px; }
+
+/* Truncar subtítulos */
+.ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 420px; }
