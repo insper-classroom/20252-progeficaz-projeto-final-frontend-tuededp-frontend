@@ -1,6 +1,6 @@
 /* Footer Styles */
 .footer {
-  background: #1E40AF;
+  background: #172B4D;
   padding: 40px 0 30px;
   margin-top: auto;
 }
@@ -35,7 +35,7 @@
 
 .social-link:hover {
   background: white;
-  color: #1E40AF;
+  color: #172B4D;
   transform: translateY(-2px);
 }
 

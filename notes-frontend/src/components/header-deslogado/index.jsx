@@ -10,6 +10,10 @@ const HeaderDeslogado = () => {
     navigate('/login');
   };
 
+  const handleJunteSeNosClick = () => {
+    navigate('/junte-se-nos');
+  };
+
   const handleLogoClick = () => {
     navigate('/');
   };
@@ -28,12 +32,20 @@ const HeaderDeslogado = () => {
         </div>
 
         {/* Entrar Button */}
-        <button 
-          className="entrar-button"
-          onClick={handleEntrarClick}
-        >
-          Entrar
-        </button>
+        <div className="header-actions">
+          <button 
+            className="junte-se-button"
+            onClick={handleJunteSeNosClick}
+          >
+            Junte-se a nós
+          </button>
+          <button 
+            className="entrar-button"
+            onClick={handleEntrarClick}
+          >
+            Entrar
+          </button>
+        </div>
       </div>
     </header>
   );
