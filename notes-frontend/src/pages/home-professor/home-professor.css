@@ -1,0 +1,271 @@
+.home-professor {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #F9FAFB;
+}
+
+.hp-main {
+  flex: 1;
+  padding: 2rem 1rem;
+}
+
+.hp-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.hp-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.hp-header h1 {
+  font-size: 2.5rem;
+  color: #1E40AF;
+  margin-bottom: 0.5rem;
+}
+
+.hp-header p {
+  font-size: 1.1rem;
+  color: #6B7280;
+  margin-bottom: 1.5rem;
+}
+
+.hp-card {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.hp-card h2 {
+  font-size: 1.5rem;
+  color: #1E40AF;
+  margin-bottom: 1.5rem;
+}
+
+.hp-form-card {
+  border: 2px solid #DBEAFE;
+}
+
+.hp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.hp-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.hp-form label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+.hp-form input,
+.hp-form textarea,
+.hp-form select {
+  padding: 0.75rem;
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.hp-form input:focus,
+.hp-form textarea:focus,
+.hp-form select:focus {
+  outline: none;
+  border-color: #1E40AF;
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.alert {
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+}
+
+.alert--error {
+  background: #FEE2E2;
+  color: #991B1B;
+  border: 1px solid #FCA5A5;
+}
+
+.alert--ok {
+  background: #D1FAE5;
+  color: #065F46;
+  border: 1px solid #86EFAC;
+}
+
+.hp-aulas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.hp-aula-card {
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.hp-aula-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.hp-aula-card h3 {
+  font-size: 1.2rem;
+  color: #1E40AF;
+  margin-bottom: 0.5rem;
+}
+
+.hp-aula-desc {
+  color: #6B7280;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.hp-aula-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.hp-badge {
+  background: #DBEAFE;
+  color: #1E40AF;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.hp-price {
+  background: #FEF3C7;
+  color: #92400E;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.hp-status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.hp-status-disponivel {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.hp-status-agendada {
+  background: #DBEAFE;
+  color: #1E40AF;
+}
+
+.hp-status-em-andamento {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.hp-status-cancelada {
+  background: #FEE2E2;
+  color: #991B1B;
+}
+
+.hp-status-concluida {
+  background: #E5E7EB;
+  color: #4B5563;
+}
+
+.hp-empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #6B7280;
+}
+
+.hp-empty-state .hint {
+  color: #9CA3AF;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+.hp-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.hp-action-card {
+  background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%);
+  color: white;
+  padding: 2rem;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.hp-action-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(30, 64, 175, 0.3);
+}
+
+.hp-action-card h3 {
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+  color: white;
+}
+
+.hp-action-card p {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+  .hp-header h1 {
+    font-size: 2rem;
+  }
+
+  .hp-aulas-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .hp-actions-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
