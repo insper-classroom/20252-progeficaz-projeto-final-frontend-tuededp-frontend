@@ -1,13 +1,17 @@
 /* cta-share/index.css */
 .cta-share{
-  margin: 30px auto; max-width: 780px; text-align:center;
-  padding: 32px 24px; background:#fff; border:1px solid #E5E7EB; border-radius:16px;
-  box-shadow: 0 8px 20px rgba(16,24,40,.06);
+  margin: 30px auto; max-width: 820px; text-align:center;
+  padding: 32px 24px; background:linear-gradient(180deg,#fff 0%, #FBFDFF 100%); border:1px solid #E8EEF8; border-radius:16px;
+  box-shadow: 0 12px 30px rgba(16,24,40,.08);
 }
 .cta-share p{ font-size:20px; color:#1F2937; margin:0 0 8px; }
 .cta-share h3{ color:#1F365C; margin:0 0 16px; }
 .cta-share .primary{
-  padding:10px 18px; font-size:18px; border-radius:8px; border:none; background:#1F4B7A; color:#fff; cursor:pointer;
-  box-shadow: 0 2px 0 rgba(0,0,0,.2), 0 4px 14px rgba(31,75,122,.25) inset;
+  padding:12px 22px; font-size:18px; border-radius:10px; border:none; background:linear-gradient(90deg,#2C6ECB,#1F4B7A); color:#fff; cursor:pointer;
+  box-shadow: 0 6px 18px rgba(44,110,203,.18);
+  transition: transform .16s ease, box-shadow .16s ease;
 }
+.cta-share .primary:hover{ transform: translateY(-3px); box-shadow: 0 14px 36px rgba(44,110,203,.2); }
 .cta-share .icons{ font-size:34px; margin-top:14px; display:flex; gap:28px; justify-content:center; }
+
+.cta-share .sub{ margin-top:12px; font-size:14px; color:#475467 }

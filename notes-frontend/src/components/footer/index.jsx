@@ -38,7 +38,7 @@ const Footer = () => {
         </nav>
 
         {/* Copyright */}
-        <p className="copyright">Elixir Leakers @ 2025</p>
+        <p className="copyright">Estudaí @ 2025</p>
       </div>
     </footer>
   );
