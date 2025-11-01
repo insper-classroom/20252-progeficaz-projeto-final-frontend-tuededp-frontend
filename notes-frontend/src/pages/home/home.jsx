@@ -6,16 +6,34 @@ import Footer from "../../components/footer";
 import "./home.css";
 import CardDisciplinas from "../../components/card-disciplinas";
 import heroImg from "../../assets/garota_home.png"; 
+import { useNavigate } from "react-router-dom"
 
 export default function Home() {
   const [q, setQ] = React.useState("");
-
+  const navigate = useNavigate()
   const isAuthenticated = isLoggedIn();
 
   function handleSearch(e) {
     e.preventDefault();
   }
 
+  function handleDisciplina(slug) {
+    const areaMap = {
+      'matematica': 'Matemática',
+      'portugues': 'Português',
+      'geografia': 'Geografia',
+      'historia': 'História',
+      'fisica': 'Física',
+      'quimica': 'Química',
+      'biologia': 'Biologia',
+      'ingles': 'Inglês',
+      'redacao': 'Redação',
+      'programacao': 'Programação'
+    };
+
+    const areaNome = areaMap[slug] || slug;
+    navigate(`/professores?area=${encodeURIComponent(areaNome)}`);
+  }
   return (
     <div className="home">
       {isAuthenticated ? <HeaderLogado /> : <HeaderDeslogado />}
@@ -71,7 +89,7 @@ export default function Home() {
         </div>
       </section>
 
-      <CardDisciplinas onSelect={(slug)=>console.log("Disciplina:", slug)} />
+      <CardDisciplinas onSelect={handleDisciplina} />
       <Footer />
     </div>
   );

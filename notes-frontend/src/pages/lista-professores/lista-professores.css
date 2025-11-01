@@ -1,0 +1,197 @@
+.lista-professores-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f8f9fa;
+}
+
+.lista-professores-container {
+  flex: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  width: 100%;
+}
+
+.lista-professores-header {
+  margin-bottom: 40px;
+}
+
+.btn-voltar {
+  background: white;
+  border: 1px solid #ddd;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-bottom: 20px;
+  transition: 0.2s;
+}
+
+.btn-voltar:hover {
+  background: #f5f5f5;
+}
+
+.lista-titulo {
+  font-size: 36px;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 8px 0;
+}
+
+.lista-subtitulo {
+  font-size: 18px;
+  color: #666;
+  margin: 0;
+}
+
+
+.loading-state, .error-state, .empty-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f3f3;
+  border-top-color: #0366d6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error-message {
+  color: #e74c3c;
+  margin-bottom: 20px;
+}
+
+
+.professores-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.professor-card {
+  background: white;
+  border: 1px solid #e1e4e8;
+  border-radius: 12px;
+  padding: 24px;
+  transition: 0.2s;
+}
+
+.professor-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.professor-card-header {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.professor-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0366d6, #0969da);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 24px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.professor-nome {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 8px 0;
+}
+
+.professor-area {
+  background: #e3f2fd;
+  color: #0366d6;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.professor-bio {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.professor-detalhes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+  margin-bottom: 16px;
+}
+
+.professor-detalhe {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+}
+
+
+.btn {
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: 0.2s;
+}
+
+.btn--primary {
+  background: #0366d6;
+  color: white;
+}
+
+.btn--primary:hover {
+  background: #0256b9;
+  transform: translateY(-2px);
+}
+
+.btn--outline {
+  background: white;
+  color: #0366d6;
+  border: 2px solid #0366d6;
+}
+
+.btn--outline:hover {
+  background: #f1f8ff;
+}
+
+.btn-ver-perfil {
+  width: 100%;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .lista-titulo {
+    font-size: 28px;
+  }
+  
+  .professores-grid {
+    grid-template-columns: 1fr;
+  }
+}
