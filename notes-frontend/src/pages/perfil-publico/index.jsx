@@ -127,11 +127,24 @@ export default function PerfilPublico(){
             {usuario.endereco?.cidade && <p className="pp-local">{usuario.endereco.cidade} • {usuario.endereco.estado}</p>}
             <div className="pp-actions">
               {isProfessor ? (
-                <button className="btn btn--primary" onClick={handleAgendarClick}>
-                  Agendar Aula
-                </button>
+                <>
+                  <button className="btn btn--primary" onClick={handleAgendarClick}>
+                    Agendar Aula
+                  </button>
+                  <button
+                    className="btn btn--outline"
+                    onClick={iniciarConversa}
+                    disabled={!usuario?._id}
+                  >
+                    Iniciar conversa
+                  </button>
+                </>
               ) : (
-                <button className="btn btn--primary" onClick={iniciarConversa} disabled={!normalizeId(usuario?._id)}>
+                <button
+                  className="btn btn--primary"
+                  onClick={iniciarConversa}
+                  disabled={!usuario?._id}
+                >
                   Iniciar conversa
                 </button>
               )}
