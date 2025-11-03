@@ -35,6 +35,29 @@ Desenvolvido com **React.js (Vite)**, o sistema consome uma **API RESTful em Fla
 
 ---
 
+## 🧩 Tecnologias Utilizadas — Frontend
+
+| Categoria | Tecnologias / Ferramentas | Descrição |
+|------------|----------------------------|------------|
+| **Linguagem Principal** | JavaScript (ES6+) | Base do desenvolvimento React |
+| **Framework / Build Tool** | React.js (com Vite) | Framework principal da interface e empacotador rápido |
+| **Gerenciamento de Rotas** | React Router DOM | Controle de navegação entre páginas |
+| **HTTP Client** | Axios | Consumo da API Flask (requisições REST) |
+| **Gerenciamento de Estado** | React Hooks / Context API | Controle de estado global e local dos componentes |
+| **Estilização** | CSS / CSS Modules | Estilos modulares, tema claro/escuro e responsividade |
+| **Componentização** | JSX / Componentes funcionais | Interface dinâmica e reutilizável |
+| **Autenticação** | JWT (via authService.js) | Proteção de rotas e controle de sessão |
+| **Integração com Backend** | API Flask RESTful | Comunicação com servidor Python |
+| **Empacotamento / Build** | Vite | Build rápido e leve para produção |
+| **Controle de Versão** | Git e GitHub | Versionamento colaborativo |
+| **Padrões de Código** | ESLint | Padronização de sintaxe e boas práticas |
+| **Gerenciamento de Dependências** | npm | Instalação e manutenção de pacotes |
+| **Ambiente de Desenvolvimento** | Node.js | Execução e build do projeto React |
+| **Ferramentas de Teste** | Vitest / Manual Testing | Testes de fluxo e usabilidade |
+| **Assets / Ícones** | React Icons / Assets Customizados | Ícones, imagens e recursos gráficos |
+
+---
+
 ## 🏗️ Estrutura do Projeto
 
 ```bash
