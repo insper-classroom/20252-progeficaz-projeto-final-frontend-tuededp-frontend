@@ -9,59 +9,144 @@
 }
 
 .subjects{
-  background:var(--panel);
-  padding:2px 0 56px;
+  background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+  padding: 100px 24px;
 }
+
 .subjects__container{
-  max-width:1240px;margin:0 auto;padding:0 20px;
-  margin-bottom: 7%
+  max-width: 1240px;
+  margin: 0 auto;
 }
-.subjects__header{margin-bottom:12px}
+
+.subjects__header{
+  text-align: center;
+  margin-bottom: 56px;
+}
+
 .subjects__title{
-  font-size:clamp(22px,3vw,28px);
-  margin:0 0 6px; color:var(--ink); letter-spacing:-.2px;
+  font-family: "Montserrat", system-ui, -apple-system, sans-serif;
+  font-weight: 700;
+  font-size: clamp(36px, 5vw, 56px);
+  line-height: 1.1;
+  margin: 0 0 16px;
+  color: var(--ink);
+  letter-spacing: -0.5px;
 }
-.subjects__subtitle{color:var(--muted);margin:0}
+
+.subjects__subtitle{
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 0;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
 
 .subjects__grid{
-  display:grid;
-  grid-template-columns: repeat(5, minmax(0,1fr));
-  gap:14px; margin-top:18px; padding:0; list-style:none;
-}
-@media (max-width: 1024px){
-  .subjects__grid{grid-template-columns: repeat(3, minmax(0,1fr));}
-}
-@media (max-width: 640px){
-  .subjects__grid{grid-template-columns: repeat(2, minmax(0,1fr));}
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 24px;
+  margin-top: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.subjects__item{min-width:0}
+@media (max-width: 1024px){
+  .subjects__grid{
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px){
+  .subjects{
+    padding: 64px 20px;
+  }
+  
+  .subjects__header{
+    margin-bottom: 40px;
+  }
+  
+  .subjects__grid{
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+}
+
+@media (max-width: 480px){
+  .subjects__grid{
+    grid-template-columns: 1fr;
+  }
+}
+
+.subjects__item{
+  min-width: 0;
+}
 
 .subject{
-  width:100%;
-  display:flex; align-items:center; gap:10px;
-  padding:14px 16px;
-  background:var(--surface);
-  border:1px solid var(--line);
-  border-radius:var(--r-lg);
-  text-align:left;
-  cursor:pointer;
-  transition: box-shadow .18s ease, transform .12s ease, border-color .18s ease, background .18s;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 32px 24px;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-height: 160px;
 }
+
 .subject:hover{
-  border-color:#D0D5DD;
-  box-shadow:0 10px 28px rgba(2,6,23,.06);
-  transform: translateY(-1px);
+  border-color: var(--brand);
+  box-shadow: 0 12px 32px rgba(10, 102, 194, 0.12);
+  transform: translateY(-4px);
+  background: linear-gradient(135deg, rgba(10, 102, 194, 0.02) 0%, rgba(10, 102, 194, 0.05) 100%);
 }
+
+.subject:active{
+  transform: translateY(-2px);
+}
+
 .subject:focus-visible{
-  outline:none;
-  box-shadow:0 0 0 3px rgba(10,102,194,.20);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(10, 102, 194, 0.20);
+  border-color: var(--brand);
 }
+
 .subject__icon{
-  width:36px; height:36px; display:grid; place-items:center;
-  font-size:20px; border-radius:10px;
-  background:rgba(10,102,194,.08); color:#0A66C2;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(10, 102, 194, 0.1) 0%, rgba(10, 102, 194, 0.15) 100%);
+  transition: all 0.3s ease;
+  color: var(--brand);
 }
+
+.subject__icon svg {
+  width: 32px;
+  height: 32px;
+}
+
+.subject:hover .subject__icon{
+  background: linear-gradient(135deg, rgba(10, 102, 194, 0.15) 0%, rgba(10, 102, 194, 0.25) 100%);
+  transform: scale(1.1);
+  color: var(--brand);
+}
+
 .subject__name{
-  font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  font-family: "Montserrat", system-ui, -apple-system, sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
 }

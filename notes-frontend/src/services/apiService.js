@@ -1,6 +1,31 @@
 // Serviço de API para integração com backend
 const API_BASE_URL = 'http://localhost:5000';
 
+// Buscar estatísticas gerais da plataforma
+export const buscarEstatisticas = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/stats`);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('[buscarEstatisticas] Erro na resposta:', errorData);
+      return { error: errorData.error || 'Erro ao buscar estatísticas' };
+    }
+    
+    const data = await response.json();
+    console.log('[buscarEstatisticas] Dados recebidos:', data);
+    
+    return { 
+      totalAlunos: data.total_alunos || 0,
+      totalProfessores: data.total_professores || 0,
+      totalAulas: data.total_aulas || 0
+    };
+  } catch (error) {
+    console.error('[buscarEstatisticas] Erro ao buscar estatísticas:', error);
+    return { error: 'Não foi possível conectar ao servidor' };
+  }
+};
+
 // Função para validar CEP
 export const validarCEP = async (cep) => {
   try {
@@ -193,6 +218,25 @@ export const buscarStatsProfessor = async (professorId) => {
 };
 
 // Função para buscar professores
+// Buscar professores em alta (melhores avaliações)
+export const buscarProfessoresEmAlta = async (limit = 6) => {
+  try {
+    const url = `${API_BASE_URL}/api/professores/destaque?limit=${limit}`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return { error: errorData.error || 'Erro ao buscar professores em alta' };
+    }
+    
+    const data = await response.json();
+    return { data: data.data || [], total: data.total || 0 };
+  } catch (error) {
+    console.error('Erro ao buscar professores em alta:', error);
+    return { error: 'Não foi possível conectar ao servidor' };
+  }
+};
+
 export const buscarProfessores = async (params = {}) => {
   try {
     const queryParams = new URLSearchParams();
