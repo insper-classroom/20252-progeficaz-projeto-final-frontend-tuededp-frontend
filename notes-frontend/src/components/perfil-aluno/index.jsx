@@ -16,6 +16,12 @@ export default function PerfilAluno() {
   const [err, setErr] = React.useState("");
   const [ok, setOk] = React.useState("");
 
+  // helpers para itens dinâmicos do professor
+  function emptyExperience() { return { titulo: "", descricao: "", inicio: "", fim: "", link: "" }; }
+  function emptyFormacao() { return { instituicao: "", curso: "", inicio: "", fim: "", descricao: "" }; }
+  function emptyCert() { return { titulo: "", org: "", ano: "", link: "" }; }
+  function emptyProjeto() { return { titulo: "", resumo: "", link: "" }; }
+
   // Estado inicial do formulário baseado no tipo de usuário
   const [form, setForm] = React.useState(() => {
     const baseForm = {
@@ -36,7 +42,6 @@ export default function PerfilAluno() {
       baseForm.bio = meLocal?.bio || "";
       baseForm.quer_aprender = (meLocal?.quer_aprender || []).join(", ");
       baseForm.idiomas = (meLocal?.idiomas || []).join(", ");
-      // NOTA: removi especializacoes e quer_ensinar daqui (só pra professor)
     }
 
     // Campos específicos de professores (aparecem apenas para professores)
@@ -44,8 +49,17 @@ export default function PerfilAluno() {
       baseForm.historico_academico_profissional = meLocal?.historico_academico_profissional || "";
       baseForm.especializacoes = (meLocal?.especializacoes || []).join(", ");
       baseForm.quer_ensinar = (meLocal?.quer_ensinar || []).join(", ");
-      // campos mais complexos (experiencias, formacao, etc.) não estão sendo exibidos aqui
-      // para evitar enviar formatos errados ao backend — podemos adicionar UI específica depois.
+      baseForm.idiomas = (meLocal?.idiomas || []).join(", ");
+      baseForm.area = meLocal?.area || "";
+      // disponibilidade (se existir em meLocal)
+      baseForm.disponibilidade_timezone = meLocal?.disponibilidade?.timezone || "";
+      baseForm.disponibilidade_dias = (meLocal?.disponibilidade?.dias || []).join(", ");
+      baseForm.disponibilidade_horarios = (meLocal?.disponibilidade?.horarios || []).join(", ");
+      // listas complexas
+      baseForm.experiencias = Array.isArray(meLocal?.experiencias) && meLocal.experiencias.length ? meLocal.experiencias : [ emptyExperience() ];
+      baseForm.formacao = Array.isArray(meLocal?.formacao) && meLocal.formacao.length ? meLocal.formacao : [ emptyFormacao() ];
+      baseForm.certificacoes = Array.isArray(meLocal?.certificacoes) && meLocal.certificacoes.length ? meLocal.certificacoes : [ emptyCert() ];
+      baseForm.projetos = Array.isArray(meLocal?.projetos) && meLocal.projetos.length ? meLocal.projetos : [ emptyProjeto() ];
     }
 
     return baseForm;
@@ -88,6 +102,15 @@ export default function PerfilAluno() {
           updatedForm.historico_academico_profissional = me?.historico_academico_profissional || "";
           updatedForm.especializacoes = (me?.especializacoes || []).join(", ");
           updatedForm.quer_ensinar = (me?.quer_ensinar || []).join(", ");
+          updatedForm.idiomas = (me?.idiomas || []).join(", ");
+          updatedForm.area = me?.area || "";
+          updatedForm.disponibilidade_timezone = me?.disponibilidade?.timezone || "";
+          updatedForm.disponibilidade_dias = (me?.disponibilidade?.dias || []).join(", ");
+          updatedForm.disponibilidade_horarios = (me?.disponibilidade?.horarios || []).join(", ");
+          updatedForm.experiencias = Array.isArray(me?.experiencias) && me.experiencias.length ? me.experiencias : [ emptyExperience() ];
+          updatedForm.formacao = Array.isArray(me?.formacao) && me.formacao.length ? me.formacao : [ emptyFormacao() ];
+          updatedForm.certificacoes = Array.isArray(me?.certificacoes) && me.certificacoes.length ? me.certificacoes : [ emptyCert() ];
+          updatedForm.projetos = Array.isArray(me?.projetos) && me.projetos.length ? me.projetos : [ emptyProjeto() ];
         }
 
         setForm(prev => ({ ...prev, ...updatedForm }));
@@ -104,11 +127,31 @@ export default function PerfilAluno() {
     })();
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // isProfessor é estático durante a sessão; evitei dependência para não re-inicializar
+  }, []); // isProfessor estático durante a sessão
 
   function handleChange(e) {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
+  }
+
+  // Helpers para listas dinâmicas (professor)
+  function updateListField(listName, idx, key, value) {
+    setForm(prev => {
+      const arr = Array.isArray(prev[listName]) ? [...prev[listName]] : [];
+      arr[idx] = { ...(arr[idx] || {}), [key]: value };
+      return { ...prev, [listName]: arr };
+    });
+  }
+  function addListItem(listName, factory) {
+    setForm(prev => ({ ...prev, [listName]: [...(prev[listName] || []), factory()] }));
+  }
+  function removeListItem(listName, idx, factory) {
+    setForm(prev => {
+      const arr = Array.isArray(prev[listName]) ? [...prev[listName]] : [];
+      arr.splice(idx, 1);
+      if (arr.length === 0) arr.push(factory());
+      return { ...prev, [listName]: arr };
+    });
   }
 
   async function handleSave(e) {
@@ -131,7 +174,7 @@ export default function PerfilAluno() {
       // Campos específicos de alunos (SOMENTE para alunos)
       if (!isProfessor) {
         patch.bio = form.bio;
-        patch.quer_aprender = form.quer_aprender; // enviado como string (backend fará normalize_list_maybe)
+        patch.quer_aprender = form.quer_aprender;
         patch.idiomas = form.idiomas;
       }
 
@@ -140,19 +183,66 @@ export default function PerfilAluno() {
         patch.historico_academico_profissional = form.historico_academico_profissional;
         patch.especializacoes = form.especializacoes;
         patch.quer_ensinar = form.quer_ensinar;
+        patch.idiomas = form.idiomas;
+        patch.area = form.area;
+
+        // disponibilidade
+        if (form.disponibilidade_timezone || form.disponibilidade_dias || form.disponibilidade_horarios) {
+          patch.disponibilidade = {
+            timezone: form.disponibilidade_timezone || undefined,
+            dias: form.disponibilidade_dias ? form.disponibilidade_dias.split(",").map(s=>s.trim()).filter(Boolean) : [],
+            horarios: form.disponibilidade_horarios ? form.disponibilidade_horarios.split(",").map(s=>s.trim()).filter(Boolean) : []
+          };
+        }
+        // listas complexas (filtra itens vazios)
+        if (Array.isArray(form.experiencias)) {
+          const exs = form.experiencias.map(x => ({
+            titulo: x.titulo?.trim(),
+            descricao: x.descricao?.trim(),
+            inicio: x.inicio?.trim(),
+            fim: x.fim?.trim(),
+            link: x.link?.trim()
+          })).filter(x => x.titulo || x.descricao);
+          if (exs.length) patch.experiencias = exs;
+        }
+        if (Array.isArray(form.formacao)) {
+          const f = form.formacao.map(x=>({
+            instituicao: x.instituicao?.trim(),
+            curso: x.curso?.trim(),
+            inicio: x.inicio?.trim(),
+            fim: x.fim?.trim(),
+            descricao: x.descricao?.trim()
+          })).filter(x => x.instituicao || x.curso);
+          if (f.length) patch.formacao = f;
+        }
+        if (Array.isArray(form.certificacoes)) {
+          const c = form.certificacoes.map(x=>({
+            titulo: x.titulo?.trim(),
+            org: x.org?.trim(),
+            ano: x.ano?.trim(),
+            link: x.link?.trim()
+          })).filter(x => x.titulo);
+          if (c.length) patch.certificacoes = c;
+        }
+        if (Array.isArray(form.projetos)) {
+          const p = form.projetos.map(x=>({
+            titulo: x.titulo?.trim(),
+            resumo: x.resumo?.trim(),
+            link: x.link?.trim()
+          })).filter(x => x.titulo || x.resumo);
+          if (p.length) patch.projetos = p;
+        }
       }
 
       // Campos comuns (ambos)
       if (form.modalidades !== undefined) {
         patch.modalidades = form.modalidades;
       }
-      // valor_hora: para aluno é "disposto a pagar", para professor "cobrado" — ambos usam o mesmo campo name no backend
+      // valor_hora: converter para número se possível, senão null
       if (form.valor_hora !== undefined && form.valor_hora !== "") {
-        // converter para número se possível
-        const n = Number(form.valor_hora);
+        const n = Number(String(form.valor_hora).replace(",", "."));
         patch.valor_hora = Number.isFinite(n) ? n : null;
       } else {
-        // se deixado vazio, envie null para limpar no backend caso deseje
         patch.valor_hora = null;
       }
 
@@ -162,6 +252,8 @@ export default function PerfilAluno() {
         setForm(prev => ({ ...prev, slug: updated.slug }));
       }
       setOk("Perfil atualizado com sucesso!");
+      // atualiza localmente o usuário
+      setUser({ ...(getUser() || {}), ...updated });
     } catch (e) {
       setErr(e.message || "Erro ao atualizar perfil");
     } finally {
@@ -180,6 +272,8 @@ export default function PerfilAluno() {
       if (res?.avatarUrl) setAvatarPreview(res.avatarUrl);
       if (res?.user?.avatarUrl) setAvatarPreview(res.user.avatarUrl);
       setOk("Foto atualizada!");
+      // atualiza usuario local
+      if (res?.user) setUser({ ...(getUser() || {}), ...res.user });
     } catch (e) {
       setErr(e.message || "Erro ao enviar foto");
     } finally {
@@ -289,19 +383,143 @@ export default function PerfilAluno() {
 
                   {isProfessor ? (
                     <>
+                      {/* Novos campos do professor */}
+                      <div className="field">
+                        <label htmlFor="area">Área</label>
+                        <input id="area" name="area" value={form.area || ""} onChange={handleChange} placeholder="Ex.: Programação, Matemática" />
+                      </div>
+
                       <div className="field">
                         <label htmlFor="historico_academico_profissional">Histórico Acadêmico e Profissional</label>
-                        <textarea id="historico_academico_profissional" name="historico_academico_profissional" value={form.historico_academico_profissional} onChange={handleChange} rows={4} placeholder="Formação acadêmica, experiência profissional, conquistas..." />
+                        <textarea id="historico_academico_profissional" name="historico_academico_profissional" value={form.historico_academico_profissional || ""} onChange={handleChange} rows={4} placeholder="Formação acadêmica, experiência profissional, conquistas..." />
                       </div>
 
                       <div className="field">
                         <label htmlFor="especializacoes">Especializações (separe por vírgula)</label>
-                        <input id="especializacoes" name="especializacoes" value={form.especializacoes} onChange={handleChange} placeholder="Cálculo I, Machine Learning" />
+                        <input id="especializacoes" name="especializacoes" value={form.especializacoes || ""} onChange={handleChange} placeholder="Cálculo I, Machine Learning" />
                       </div>
 
                       <div className="field">
                         <label htmlFor="quer_ensinar">Quero ensinar (vírgulas)</label>
                         <input id="quer_ensinar" name="quer_ensinar" value={form.quer_ensinar || ""} onChange={handleChange} placeholder="Cálculo, Estatística" />
+                      </div>
+
+                      <div className="grid-2">
+                        <div className="field">
+                          <label htmlFor="idiomas">Idiomas (vírgula)</label>
+                          <input id="idiomas" name="idiomas" value={form.idiomas || ""} onChange={handleChange} placeholder="PT-BR, EN-B2" />
+                        </div>
+
+                        <div className="field">
+                          <label htmlFor="modalidades">Modalidades de Ensino (vírgulas)</label>
+                          <input id="modalidades" name="modalidades" value={form.modalidades || ""} onChange={handleChange} placeholder="Online, Presencial" />
+                        </div>
+                      </div>
+
+                      <div className="grid-2">
+                        <div className="field">
+                          <label htmlFor="valor_hora">Valor/hora (R$)</label>
+                          <input id="valor_hora" name="valor_hora" type="number" step="1" min="0" value={form.valor_hora || ""} onChange={handleChange} placeholder="60" />
+                        </div>
+
+                        <div className="field">
+                          <label htmlFor="disponibilidade_timezone">Disponibilidade - fuso</label>
+                          <input id="disponibilidade_timezone" name="disponibilidade_timezone" value={form.disponibilidade_timezone || ""} onChange={handleChange} placeholder="America/Sao_Paulo" />
+                        </div>
+                      </div>
+
+                      <div className="grid-2">
+                        <div className="field">
+                          <label htmlFor="disponibilidade_dias">Disponibilidade - dias (vírgula)</label>
+                          <input id="disponibilidade_dias" name="disponibilidade_dias" value={form.disponibilidade_dias || ""} onChange={handleChange} placeholder="Segunda, Terça, Quarta" />
+                        </div>
+                        <div className="field">
+                          <label htmlFor="disponibilidade_horarios">Disponibilidade - horários (vírgula)</label>
+                          <input id="disponibilidade_horarios" name="disponibilidade_horarios" value={form.disponibilidade_horarios || ""} onChange={handleChange} placeholder="09:00-12:00, 14:00-18:00" />
+                        </div>
+                      </div>
+
+                      {/* Experiências dinâmicas */}
+                      <div className="field">
+                        <label>Experiências (projetos, ensino, pesquisa — opcional)</label>
+                        { (form.experiencias || []).map((ex, i) => (
+                          <div className="dynamic-block" key={i}>
+                            <input placeholder="Título / atividade" value={ex.titulo || ""} onChange={(ev)=> updateListField('experiencias', i, 'titulo', ev.target.value)} />
+                            <textarea placeholder="Descrição" value={ex.descricao || ""} onChange={(ev)=> updateListField('experiencias', i, 'descricao', ev.target.value)} rows={2} />
+                            <div style={{display:'flex',gap:8}}>
+                              <input placeholder="Início" value={ex.inicio || ""} onChange={(ev)=> updateListField('experiencias', i, 'inicio', ev.target.value)} />
+                              <input placeholder="Fim" value={ex.fim || ""} onChange={(ev)=> updateListField('experiencias', i, 'fim', ev.target.value)} />
+                            </div>
+                            <input placeholder="Link (opcional)" value={ex.link || ""} onChange={(ev)=> updateListField('experiencias', i, 'link', ev.target.value)} />
+                            <div className="dynamic-actions">
+                              <button type="button" onClick={() => removeListItem('experiencias', i, emptyExperience)}>Remover</button>
+                            </div>
+                          </div>
+                        )) }
+                        <div style={{marginTop:8}}>
+                          <button type="button" onClick={() => addListItem('experiencias', emptyExperience)}>Adicionar experiência</button>
+                        </div>
+                      </div>
+
+                      {/* Formação */}
+                      <div className="field">
+                        <label>Formação</label>
+                        { (form.formacao || []).map((f, i) => (
+                          <div className="dynamic-block" key={i}>
+                            <input placeholder="Instituição" value={f.instituicao || ""} onChange={(ev)=> updateListField('formacao', i, 'instituicao', ev.target.value)} />
+                            <input placeholder="Curso" value={f.curso || ""} onChange={(ev)=> updateListField('formacao', i, 'curso', ev.target.value)} />
+                            <div style={{display:'flex',gap:8}}>
+                              <input placeholder="Início" value={f.inicio || ""} onChange={(ev)=> updateListField('formacao', i, 'inicio', ev.target.value)} />
+                              <input placeholder="Fim" value={f.fim || ""} onChange={(ev)=> updateListField('formacao', i, 'fim', ev.target.value)} />
+                            </div>
+                            <textarea placeholder="Descrição (opcional)" value={f.descricao || ""} onChange={(ev)=> updateListField('formacao', i, 'descricao', ev.target.value)} rows={2} />
+                            <div className="dynamic-actions">
+                              <button type="button" onClick={() => removeListItem('formacao', i, emptyFormacao)}>Remover</button>
+                            </div>
+                          </div>
+                        )) }
+                        <div style={{marginTop:8}}>
+                          <button type="button" onClick={() => addListItem('formacao', emptyFormacao)}>Adicionar formação</button>
+                        </div>
+                      </div>
+
+                      {/* Certificações */}
+                      <div className="field">
+                        <label>Certificações</label>
+                        { (form.certificacoes || []).map((c, i) => (
+                          <div className="dynamic-block" key={i}>
+                            <input placeholder="Título" value={c.titulo || ""} onChange={(ev)=> updateListField('certificacoes', i, 'titulo', ev.target.value)} />
+                            <input placeholder="Organização" value={c.org || ""} onChange={(ev)=> updateListField('certificacoes', i, 'org', ev.target.value)} />
+                            <div style={{display:'flex',gap:8}}>
+                              <input placeholder="Ano" value={c.ano || ""} onChange={(ev)=> updateListField('certificacoes', i, 'ano', ev.target.value)} />
+                              <input placeholder="Link (opcional)" value={c.link || ""} onChange={(ev)=> updateListField('certificacoes', i, 'link', ev.target.value)} />
+                            </div>
+                            <div className="dynamic-actions">
+                              <button type="button" onClick={() => removeListItem('certificacoes', i, emptyCert)}>Remover</button>
+                            </div>
+                          </div>
+                        )) }
+                        <div style={{marginTop:8}}>
+                          <button type="button" onClick={() => addListItem('certificacoes', emptyCert)}>Adicionar certificação</button>
+                        </div>
+                      </div>
+
+                      {/* Projetos */}
+                      <div className="field">
+                        <label>Projetos</label>
+                        { (form.projetos || []).map((p, i) => (
+                          <div className="dynamic-block" key={i}>
+                            <input placeholder="Título" value={p.titulo || ""} onChange={(ev)=> updateListField('projetos', i, 'titulo', ev.target.value)} />
+                            <input placeholder="Link (opcional)" value={p.link || ""} onChange={(ev)=> updateListField('projetos', i, 'link', ev.target.value)} />
+                            <textarea placeholder="Resumo" value={p.resumo || ""} onChange={(ev)=> updateListField('projetos', i, 'resumo', ev.target.value)} rows={2} />
+                            <div className="dynamic-actions">
+                              <button type="button" onClick={() => removeListItem('projetos', i, emptyProjeto)}>Remover</button>
+                            </div>
+                          </div>
+                        )) }
+                        <div style={{marginTop:8}}>
+                          <button type="button" onClick={() => addListItem('projetos', emptyProjeto)}>Adicionar projeto</button>
+                        </div>
                       </div>
                     </>
                   ) : (
@@ -324,18 +542,6 @@ export default function PerfilAluno() {
                       </div>
                     </>
                   )}
-
-                  {/* Modalidades e valor/hora (tanto para aluno quanto professor) */}
-                  <div className="grid-2">
-                    <div className="field">
-                      <label htmlFor="modalidades">{isProfessor ? "Modalidades de Ensino (vírgulas)" : "Modalidades (vírgulas)"}</label>
-                      <input id="modalidades" name="modalidades" value={form.modalidades} onChange={handleChange} placeholder="Online, Presencial" />
-                    </div>
-                    <div className="field">
-                      <label htmlFor="valor_hora">Valor/hora (R$)</label>
-                      <input id="valor_hora" name="valor_hora" type="number" step="1" min="0" value={form.valor_hora} onChange={handleChange} placeholder="60" />
-                    </div>
-                  </div>
 
                   <div className="grid-3">
                     <div className="field">
