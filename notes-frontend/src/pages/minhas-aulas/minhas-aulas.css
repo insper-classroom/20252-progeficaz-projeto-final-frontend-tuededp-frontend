@@ -1,0 +1,157 @@
+.minhas-aulas-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #F8FAFC;
+}
+
+.minhas-aulas-main {
+  flex: 1;
+  padding: 2rem 0;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+}
+
+.page-header h1 {
+  font-size: 2rem;
+  margin: 0 0 0.5rem 0;
+  color: #0F1728;
+}
+
+.page-header p {
+  color: #6B7280;
+  margin: 0;
+}
+
+.alert {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.alert--error {
+  background: #FEE2E2;
+  color: #DC2626;
+  border: 1px solid #FCA5A5;
+}
+
+.loading, .empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #6B7280;
+}
+
+.aulas-list {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.aula-card {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: box-shadow 0.2s;
+}
+
+.aula-card:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.aula-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.aula-info h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  color: #0F1728;
+}
+
+.professor-name, .aula-data {
+  margin: 0.25rem 0;
+  color: #6B7280;
+  font-size: 0.9rem;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.status-concluida {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.status-confirmada {
+  background: #DBEAFE;
+  color: #1E40AF;
+}
+
+.status-agendada {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.status-cancelada {
+  background: #FEE2E2;
+  color: #DC2626;
+}
+
+.status-default {
+  background: #F3F4F6;
+  color: #374151;
+}
+
+.aula-descricao {
+  color: #4B5563;
+  margin: 1rem 0;
+  line-height: 1.6;
+}
+
+.avaliacao-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #E5E7EB;
+}
+
+.avaliacao-info {
+  color: #6B7280;
+  font-size: 0.9rem;
+  font-style: italic;
+  margin: 0;
+}
+
+.btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn--primary {
+  background: #1E40AF;
+  color: #FFFFFF;
+}
+
+.btn--primary:hover {
+  background: #1E3A8A;
+}
+

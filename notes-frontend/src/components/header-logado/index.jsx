@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { logout } from "../../services/authService";
+import { logout, getUser, getTipo } from "../../services/authService";
 import logo from "../../assets/logo_estudai.jpg";
 import { useNavigate } from "react-router-dom";
 import { buscarUsuarios } from "../../services/apiService";
@@ -66,9 +66,20 @@ const HeaderLogado = () => {
   const suggestionsRef = useRef(null);
   const navigate = useNavigate();
 
+  const user = getUser();
+  const tipo = getTipo() || user?.tipo;
+  const isAluno = tipo?.toLowerCase() === "aluno";
+
   const handleLogoClick = () => navigate("/");
-  const handleDashboard = () => navigate("/dashboard-aluno");
+  const handleDashboard = () => {
+    if (isAluno) {
+      navigate("/dashboard-aluno");
+    } else {
+      navigate("/dashboard-professor");
+    }
+  };
   const handleProfile = () => navigate("/perfil");
+  const handleMinhasAulas = () => navigate("/minhas-aulas");
   const handleLogout = () => logout();
 
   // Buscar usuários conforme digita (com debounce)
@@ -246,6 +257,9 @@ const HeaderLogado = () => {
           <div className="dropdown-menu">
             <div className="dropdown-content">
               <button onClick={handleDashboard} className="dropdown-item">Dashboard</button>
+              {isAluno && (
+                <button onClick={handleMinhasAulas} className="dropdown-item">Minhas Aulas</button>
+              )}
               <button onClick={handleProfile} className="dropdown-item">Meus Dados</button>
               <hr className="dropdown-divider" />
               <button onClick={handleLogout} className="dropdown-item logout">Sair</button>

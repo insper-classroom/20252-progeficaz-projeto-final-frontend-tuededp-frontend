@@ -20,3 +20,10 @@
 .pp-links { list-style:none; padding:0; margin:0; display:flex; gap:12px; }
 .pp-link, .pp-links a { text-decoration: underline; color: inherit; }
 .muted { color: var(--text-muted); }
+
+/* Avaliações */
+.pp-avaliacoes { text-align: center; }
+.pp-avaliacao-media { display: flex; align-items: baseline; justify-content: center; gap: 4px; margin-bottom: 8px; }
+.pp-avaliacao-numero { font-size: 36px; font-weight: 700; color: var(--text); }
+.pp-avaliacao-max { font-size: 20px; opacity: .6; }
+.pp-avaliacao-total { margin: 0; font-size: 14px; color: var(--text-muted); }
