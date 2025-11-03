@@ -1,12 +1,5 @@
-// src/components/CardDisciplinas.jsx
 import React from "react";
 import "./index.css";
-
-/**
- * Grade de Disciplinas – minimalista (estilo LinkedIn)
- * Use: <CardDisciplinas onSelect={(slug)=>console.log(slug)} />
- * Para trocar as matérias, edite o array "DEFAULT_SUBJECTS" ou passe via props.
- */
 
 const DEFAULT_SUBJECTS = [
   { slug: "matematica",   name: "Matemática",   icon: "🧮" },
