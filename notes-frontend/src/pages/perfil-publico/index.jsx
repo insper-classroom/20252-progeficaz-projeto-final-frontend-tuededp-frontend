@@ -44,25 +44,32 @@ export default function PerfilPublico(){
   React.useEffect(()=>{
     (async ()=>{
       try{
-        // 1) tenta via slug (rota pública)
-        let r = await fetch(`/api/alunos/slug/${slug}`);
-        if(!r.ok){
-          // 2) tenta via ID (precisa de Authorization)
-          const tk = getToken();
-          const headers = tk ? { Authorization: `Bearer ${tk}` } : {};
-          r = await fetch(`/api/alunos/${slug}` , { headers });
-          if(!r.ok) throw new Error("Perfil não encontrado");
+        let r;
+        let data;
+        // Seleciona a entidade (aluno/professor)
+        if (isProfessor) {
+          r = await fetch(`${API_BASE_URL}/api/professores/slug/${slug}`);
+          if (!r.ok) {
+            const tk = getToken();
+            const headers = tk ? { Authorization: `Bearer ${tk}` } : {};
+            r = await fetch(`${API_BASE_URL}/api/professores/${slug}`, { headers });
+          }
+        } else {
+          // tenta primeiro por slug; se falhar, tenta por id com Authorization
+          r = await fetch(`/api/alunos/slug/${slug}`);
+          if (!r.ok) {
+            const tk = getToken();
+            const headers = tk ? { Authorization: `Bearer ${tk}` } : {};
+            r = await fetch(`/api/alunos/${slug}`, { headers });
+          }
         }
-        const data = await r.json();
-        setAluno(data);
-      }catch(e){ setErr(e.message || "Perfil não encontrado"); }
-        const endpoint = isProfessor 
-          ? `${API_BASE_URL}/api/professores/slug/${slug}`
-          : `${API_BASE_URL}/api/alunos/slug/${slug}`;
-        const r = await fetch(endpoint);
-        if(!r.ok) throw new Error("Perfil não encontrado");
-        setUsuario(await r.json());
-      }catch(e){ setErr(e.message); }
+
+        if (!r || !r.ok) throw new Error("Perfil não encontrado");
+        data = await r.json();
+        setUsuario(data);
+      } catch (e) {
+        setErr(e.message || "Perfil não encontrado");
+      }
     })();
   },[slug, isProfessor]);
 
