@@ -78,9 +78,9 @@ export default function PerfilProfessor() {
 
   function handleSubmit(e) {
     e.preventDefault();
-    // Aqui  enviar o form para o backend 
+
     console.log("submit", form);
-    // Exemplo: fetch('/api/professores', { method:'POST', body: JSON.stringify(form), headers: {'Content-Type':'application/json'} })
+    
   }
 
   return (
