@@ -438,3 +438,24 @@
 button {
   background-color: transparent;
 }
+/* 1) Nudge vertical só do campo de busca (não mexe no layout) */
+:root{
+  --search-nudge: 4px;   /* ajuste fino: 0 a 6px fica bom */
+}
+.search-wrap{
+  top:16%;
+}
+
+/* 2) Corrige o posicionamento do ícone de lupa (centralizado) */
+.search-icon{
+  top: 30%;
+  transform: translateY(-50%);
+  right: 12px;            /* remova o segundo 'right' duplicado */
+}
+
+/* 3) (opcional) Limpa valores estranhos e garante centragem */
+.search-wrap{
+  max-width: 1220px;       /* antes estava 1000% (provoca comportamento estranho) */
+  min-width: 650px;       /* ajuste como quiser ou remova no mobile */
+  align-self: center;     /* garante centrado no grid */
+}
