@@ -1,6 +1,6 @@
 // src/pages/chats/chats.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { getToken } from "../../services/authService";
 import {
   searchUsers,
@@ -72,6 +72,8 @@ function safeTime(...candidates) {
 
 export default function ChatsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const handledToRef = useRef(false);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
 
@@ -95,21 +97,66 @@ export default function ChatsPage() {
   const convTimerRef = useRef(null);
   const isFetchingRef = useRef(false);
 
-  /* ============ Primeira carga das conversas ============ */
+  
   useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        const convs = await getConversations();
-        setConversations(convs);
-        if (convs?.length) setActiveId(convs[0].id);
-      } catch (err) {
-        console.error("[chat] erro ao carregar conversas:", err);
-      } finally {
-        setLoading(false);
+  if (handledToRef.current) return;
+  const params = new URLSearchParams(location.search);
+  const to = params.get("to");
+  if (!to) return;
+
+  handledToRef.current = true;
+  (async () => {
+    try {
+      const conv = await ensureConversationWith(to);
+      setConversations((prev) => {
+        const idx = prev.findIndex((c) => c.id === conv.id);
+        if (idx === -1) return [conv, ...prev];
+        const old = prev[idx];
+        const next = [...prev];
+        next[idx] = {
+          ...old,
+          title: conv.title || old.title,
+          other: { ...(old.other || {}), ...(conv.other || {}) },
+          lastMessage: conv.lastMessage || old.lastMessage || null,
+          created_at: old.created_at || conv.created_at,
+          updated_at: conv.updated_at || old.updated_at,
+        };
+        return next;
+      });
+      setActiveId(conv.id);
+      navigate("/chats", { replace: true }); // limpa ?to=
+    } catch (err) {
+      console.error("[chat] erro ao abrir via ?to=", err);
+      alert(err.message || "Não foi possível abrir a conversa.");
+    }
+  })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [location.search]);
+  /* ============ Primeira carga das conversas ============ */
+/* ============ Primeira carga das conversas ============ */
+useEffect(() => {
+  (async () => {
+    try {
+      setLoading(true);
+      const convs = await getConversations();
+      setConversations(convs);
+
+      // ⚠️ Só auto-seleciona a primeira conversa se:
+      // - NÃO veio via ?to= (checa a query)
+      // - O handler de ?to= ainda não rodou (handledToRef)
+      // - Ainda NÃO há uma conversa ativa (activeId)
+      const hasTo = new URLSearchParams(location.search).has("to");
+      if (convs?.length && !hasTo && !handledToRef.current && !activeId) {
+        setActiveId(convs[0].id);
       }
-    })();
-  }, []);
+    } catch (err) {
+      console.error("[chat] erro ao carregar conversas:", err);
+    } finally {
+      setLoading(false);
+    }
+  })();
+}, [location.search, activeId]);
+
 
   /* ============ Carrega mensagens da conversa ativa ============ */
   useEffect(() => {
