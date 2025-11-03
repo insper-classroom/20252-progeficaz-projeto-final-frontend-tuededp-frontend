@@ -25,6 +25,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/junte-se-nos" element={<JunteSeNos />} />
           <Route path="/cadastro-escolha" element={<CadastroEscolha />} />
+          <Route path="/dashboard-aluno" element={<DashboardAluno />} />
           <Route 
             path="/dashboard-aluno" 
             element={
