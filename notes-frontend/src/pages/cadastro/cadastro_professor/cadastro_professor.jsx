@@ -12,7 +12,7 @@ const CadastroProfessor = () => {
     email: '',
     telefone: '',
     cpf: '',
-    interesse: '',
+    area: '',  
     data_nascimento: '',
     historico_academico_profissional: '',
     endereco: '',
@@ -50,11 +50,14 @@ const CadastroProfessor = () => {
       senha: formData.senha,
       telefone: formData.telefone || null,
       cpf: formData.cpf || null,
-      interesse: formData.interesse || null,
+      area: formData.area || null,  
       data_nascimento: formData.data_nascimento || null,
       bio: formData.historico_academico_profissional || null,
       endereco: formData.endereco || null
     };
+
+    console.log('🔍 Dados sendo enviados:', dadosParaEnvio);
+    console.log('🔍 Area selecionada:', formData.area);
 
     const result = await cadastrarProfessor(dadosParaEnvio);
 
@@ -169,30 +172,31 @@ const CadastroProfessor = () => {
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="interesse" className="form-label">Área de especialização:</label>
+                <label htmlFor="area" className="form-label">Área de especialização:</label>
                 <select 
-                  id="interesse" 
-                  name="interesse"
-                  value={formData.interesse}
+                  id="area" 
+                  name="area"
+                  value={formData.area}
                   onChange={handleInputChange}
-                  className={`form-input ${errors.interesse ? 'error' : ''}`}
+                  className={`form-input ${errors.area ? 'error' : ''}`}
                 >
                   <option value="">Selecione uma área</option>
-                  <option value="programacao">Programação</option>
-                  <option value="matematica">Matemática</option>
-                  <option value="fisica">Física</option>
-                  <option value="quimica">Química</option>
-                  <option value="biologia">Biologia</option>
-                  <option value="historia">História</option>
-                  <option value="geografia">Geografia</option>
-                  <option value="portugues">Português</option>
-                  <option value="ingles">Inglês</option>
-                  <option value="filosofia">Filosofia</option>
-                  <option value="sociologia">Sociologia</option>
-                  <option value="educacao-fisica">Educação Física</option>
-                  <option value="artes">Artes</option>
-                  <option value="outros">Outros</option>
+                  <option value="Programação">Programação</option>
+                  <option value="Matemática">Matemática</option>
+                  <option value="Física">Física</option>
+                  <option value="Química">Química</option>
+                  <option value="Biologia">Biologia</option>
+                  <option value="História">História</option>
+                  <option value="Geografia">Geografia</option>
+                  <option value="Português">Português</option>
+                  <option value="Inglês">Inglês</option>
+                  <option value="Filosofia">Filosofia</option>
+                  <option value="Sociologia">Sociologia</option>
+                  <option value="Educação Física">Educação Física</option>
+                  <option value="Artes">Artes</option>
+                  <option value="Outros">Outros</option>
                 </select>
+                {errors.area && <span className="error-message">{errors.area}</span>}
               </div>
               
               <div className="form-group">

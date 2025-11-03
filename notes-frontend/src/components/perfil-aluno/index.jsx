@@ -7,6 +7,8 @@ import { getUser, setUser } from "../../services/authService";
 import "./index.css";
 
 export default function PerfilAluno() {
+  const meLocal = getUser();
+  const isProfessor = meLocal?.tipo === "professor" || meLocal?.tipo === "prof";
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [avatarSaving, setAvatarSaving] = React.useState(false);
@@ -14,25 +16,36 @@ export default function PerfilAluno() {
   const [err, setErr] = React.useState("");
   const [ok, setOk] = React.useState("");
 
-  const meLocal = getUser();
-  const [form, setForm] = React.useState({
-    nome: meLocal?.nome || "",
-    email: meLocal?.email || "",
-    telefone: meLocal?.telefone || "",
+  // Estado inicial do formulário baseado no tipo de usuário
+  const [form, setForm] = React.useState(() => {
+    const baseForm = {
+      nome: meLocal?.nome || "",
+      email: meLocal?.email || "",
+      telefone: meLocal?.telefone || "",
+      slug: meLocal?.slug || "",
+      headline: meLocal?.headline || "",
+      modalidades: (meLocal?.modalidades || []).join(", "),
+      valor_hora: meLocal?.valor_hora ?? "",
+      links_linkedin: meLocal?.links?.linkedin || "",
+      links_github: meLocal?.links?.github || "",
+      links_site: meLocal?.links?.site || "",
+    };
 
-    slug: meLocal?.slug || "",
-    headline: meLocal?.headline || "",
-    bio: meLocal?.bio || "",
-    especializacoes: (meLocal?.especializacoes || []).join(", "),
-    quer_ensinar: (meLocal?.quer_ensinar || []).join(", "),
-    quer_aprender: (meLocal?.quer_aprender || []).join(", "),
-    idiomas: (meLocal?.idiomas || []).join(", "),
-    modalidades: (meLocal?.modalidades || []).join(", "),
-    valor_hora: meLocal?.valor_hora ?? "",
+    // Campos específicos de alunos
+    if (!isProfessor) {
+      baseForm.bio = meLocal?.bio || "";
+      baseForm.especializacoes = (meLocal?.especializacoes || []).join(", ");
+      baseForm.quer_ensinar = (meLocal?.quer_ensinar || []).join(", ");
+      baseForm.quer_aprender = (meLocal?.quer_aprender || []).join(", ");
+      baseForm.idiomas = (meLocal?.idiomas || []).join(", ");
+    }
 
-    links_linkedin: meLocal?.links?.linkedin || "",
-    links_github: meLocal?.links?.github || "",
-    links_site: meLocal?.links?.site || "",
+    // Campos específicos de professores
+    if (isProfessor) {
+      baseForm.historico_academico_profissional = meLocal?.historico_academico_profissional || "";
+    }
+
+    return baseForm;
   });
 
   const [avatarPreview, setAvatarPreview] = React.useState(meLocal?.avatarUrl || "");
@@ -47,24 +60,34 @@ export default function PerfilAluno() {
         const me = await getProfile();
         if (!alive) return;
 
-        setForm(prev => ({
-          ...prev,
+        const updatedForm = {
           nome: me?.nome || "",
           email: me?.email || "",
           telefone: me?.telefone || "",
           slug: me?.slug || "",
           headline: me?.headline || "",
-          bio: me?.bio || "",
-          especializacoes: (me?.especializacoes || []).join(", "),
-          quer_ensinar: (me?.quer_ensinar || []).join(", "),
-          quer_aprender: (me?.quer_aprender || []).join(", "),
-          idiomas: (me?.idiomas || []).join(", "),
           modalidades: (me?.modalidades || []).join(", "),
           valor_hora: me?.valor_hora ?? "",
           links_linkedin: me?.links?.linkedin || "",
           links_github: me?.links?.github || "",
           links_site: me?.links?.site || "",
-        }));
+        };
+
+        // Campos específicos de alunos
+        if (!isProfessor) {
+          updatedForm.bio = me?.bio || "";
+          updatedForm.especializacoes = (me?.especializacoes || []).join(", ");
+          updatedForm.quer_ensinar = (me?.quer_ensinar || []).join(", ");
+          updatedForm.quer_aprender = (me?.quer_aprender || []).join(", ");
+          updatedForm.idiomas = (me?.idiomas || []).join(", ");
+        }
+
+        // Campos específicos de professores
+        if (isProfessor) {
+          updatedForm.historico_academico_profissional = me?.historico_academico_profissional || "";
+        }
+
+        setForm(prev => ({ ...prev, ...updatedForm }));
 
         if (me?.avatarUrl) setAvatarPreview(me.avatarUrl);
 
@@ -88,24 +111,40 @@ export default function PerfilAluno() {
     e.preventDefault();
     setErr(""); setOk(""); setSaving(true);
     try {
+      // Prepara o patch baseado no tipo de usuário
       const patch = {
         nome: form.nome,
         telefone: form.telefone,
         slug: form.slug?.trim(),
         headline: form.headline,
-        bio: form.bio,
-        especializacoes: form.especializacoes,
-        quer_ensinar: form.quer_ensinar,
-        quer_aprender: form.quer_aprender,
-        idiomas: form.idiomas,
-        modalidades: form.modalidades,
-        valor_hora: form.valor_hora ? Number(form.valor_hora) : null,
         links: {
           linkedin: form.links_linkedin?.trim(),
           github: form.links_github?.trim(),
           site: form.links_site?.trim(),
         },
       };
+
+      // Campos específicos de alunos
+      if (!isProfessor) {
+        patch.bio = form.bio;
+        patch.especializacoes = form.especializacoes;
+        patch.quer_ensinar = form.quer_ensinar;
+        patch.quer_aprender = form.quer_aprender;
+        patch.idiomas = form.idiomas;
+      }
+
+      // Campos específicos de professores
+      if (isProfessor) {
+        patch.historico_academico_profissional = form.historico_academico_profissional;
+      }
+
+      // Campos comuns
+      if (form.modalidades) {
+        patch.modalidades = form.modalidades;
+      }
+      if (form.valor_hora) {
+        patch.valor_hora = form.valor_hora ? Number(form.valor_hora) : null;
+      }
 
       const updated = await updateProfile(patch);
       if (updated?.avatarUrl) setAvatarPreview(updated.avatarUrl);
@@ -155,7 +194,7 @@ export default function PerfilAluno() {
     }
   }
 
-  const publicUrl = form.slug ? `/aluno/${form.slug}` : null;
+  const publicUrl = form.slug ? (isProfessor ? `/professor/${form.slug}` : `/aluno/${form.slug}`) : null;
 
   return (
     <div className="perfil">
@@ -227,7 +266,7 @@ export default function PerfilAluno() {
                   <div className="field">
                     <label htmlFor="slug">URL do perfil</label>
                     <div className="inline">
-                      <span className="muted">/aluno/</span>
+                      <span className="muted">/{isProfessor ? "professor" : "aluno"}/</span>
                       <input id="slug" name="slug" value={form.slug} onChange={handleChange} placeholder="seu-nome-unico" />
                     </div>
                     <small className="hint">Use apenas letras, números e hífens. Ex.: gabriel-rosa</small>
@@ -238,43 +277,67 @@ export default function PerfilAluno() {
                     <input id="headline" name="headline" value={form.headline} onChange={handleChange} placeholder="Ex.: Estudante de CC | Estatística | Front-end" />
                   </div>
 
-                  <div className="field">
-                    <label htmlFor="bio">Sobre você</label>
-                    <textarea id="bio" name="bio" value={form.bio} onChange={handleChange} rows={4} placeholder="Conte um pouco sobre você, interesses, objetivos..." />
-                  </div>
+                  {isProfessor ? (
+                    <div className="field">
+                      <label htmlFor="historico_academico_profissional">Histórico Acadêmico e Profissional</label>
+                      <textarea id="historico_academico_profissional" name="historico_academico_profissional" value={form.historico_academico_profissional} onChange={handleChange} rows={4} placeholder="Formação acadêmica, experiência profissional, conquistas..." />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="field">
+                        <label htmlFor="bio">Sobre você</label>
+                        <textarea id="bio" name="bio" value={form.bio} onChange={handleChange} rows={4} placeholder="Conte um pouco sobre você, interesses, objetivos..." />
+                      </div>
 
-                  <div className="grid-2">
-                    <div className="field">
-                      <label htmlFor="especializacoes">Especializações (separe por vírgula)</label>
-                      <input id="especializacoes" name="especializacoes" value={form.especializacoes} onChange={handleChange} placeholder="Cálculo I, Python, React" />
-                    </div>
-                    <div className="field">
-                      <label htmlFor="idiomas">Idiomas (separe por vírgula)</label>
-                      <input id="idiomas" name="idiomas" value={form.idiomas} onChange={handleChange} placeholder="PT-BR, EN-B2" />
-                    </div>
-                  </div>
+                      <div className="grid-2">
+                        <div className="field">
+                          <label htmlFor="especializacoes">Especializações (separe por vírgula)</label>
+                          <input id="especializacoes" name="especializacoes" value={form.especializacoes} onChange={handleChange} placeholder="Cálculo I, Python, React" />
+                        </div>
+                        <div className="field">
+                          <label htmlFor="idiomas">Idiomas (separe por vírgula)</label>
+                          <input id="idiomas" name="idiomas" value={form.idiomas} onChange={handleChange} placeholder="PT-BR, EN-B2" />
+                        </div>
+                      </div>
 
-                  <div className="grid-2">
-                    <div className="field">
-                      <label htmlFor="quer_ensinar">Quero ensinar (vírgulas)</label>
-                      <input id="quer_ensinar" name="quer_ensinar" value={form.quer_ensinar} onChange={handleChange} placeholder="Cálculo I, Python iniciante" />
-                    </div>
-                    <div className="field">
-                      <label htmlFor="quer_aprender">Quero aprender (vírgulas)</label>
-                      <input id="quer_aprender" name="quer_aprender" value={form.quer_aprender} onChange={handleChange} placeholder="Econometria, Trading algorítmico" />
-                    </div>
-                  </div>
+                      <div className="grid-2">
+                        <div className="field">
+                          <label htmlFor="quer_ensinar">Quero ensinar (vírgulas)</label>
+                          <input id="quer_ensinar" name="quer_ensinar" value={form.quer_ensinar} onChange={handleChange} placeholder="Cálculo I, Python iniciante" />
+                        </div>
+                        <div className="field">
+                          <label htmlFor="quer_aprender">Quero aprender (vírgulas)</label>
+                          <input id="quer_aprender" name="quer_aprender" value={form.quer_aprender} onChange={handleChange} placeholder="Econometria, Trading algorítmico" />
+                        </div>
+                      </div>
+                    </>
+                  )}
 
-                  <div className="grid-2">
-                    <div className="field">
-                      <label htmlFor="modalidades">Modalidades (vírgulas)</label>
-                      <input id="modalidades" name="modalidades" value={form.modalidades} onChange={handleChange} placeholder="Online, Presencial" />
+                  {!isProfessor && (
+                    <div className="grid-2">
+                      <div className="field">
+                        <label htmlFor="modalidades">Modalidades (vírgulas)</label>
+                        <input id="modalidades" name="modalidades" value={form.modalidades} onChange={handleChange} placeholder="Online, Presencial" />
+                      </div>
+                      <div className="field">
+                        <label htmlFor="valor_hora">Valor/hora (R$)</label>
+                        <input id="valor_hora" name="valor_hora" type="number" step="1" min="0" value={form.valor_hora} onChange={handleChange} placeholder="60" />
+                      </div>
                     </div>
-                    <div className="field">
-                      <label htmlFor="valor_hora">Valor/hora (R$)</label>
-                      <input id="valor_hora" name="valor_hora" type="number" step="1" min="0" value={form.valor_hora} onChange={handleChange} placeholder="60" />
+                  )}
+
+                  {isProfessor && (
+                    <div className="grid-2">
+                      <div className="field">
+                        <label htmlFor="modalidades">Modalidades de Ensino (vírgulas)</label>
+                        <input id="modalidades" name="modalidades" value={form.modalidades} onChange={handleChange} placeholder="Online, Presencial" />
+                      </div>
+                      <div className="field">
+                        <label htmlFor="valor_hora">Valor/hora (R$)</label>
+                        <input id="valor_hora" name="valor_hora" type="number" step="1" min="0" value={form.valor_hora} onChange={handleChange} placeholder="60" />
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <div className="grid-3">
                     <div className="field">

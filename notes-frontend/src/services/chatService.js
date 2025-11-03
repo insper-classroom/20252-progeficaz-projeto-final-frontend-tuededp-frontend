@@ -1,59 +1,41 @@
 // src/services/chatService.js
 import * as Auth from "./authService";
 
-// Vite proxy: mantém API vazia
 const API = "";
 
 /* ========= helpers ========= */
+function isFilled(v) {
+  return v !== undefined && v !== null && !(typeof v === "string" && v.trim() === "");
+}
+function preferFilled(...vals) {
+  for (const v of vals) if (isFilled(v)) return v;
+  return ""; // padrão seguro para strings
+}
+
 function normalizeTs(ts) {
   if (!ts) return null;
-
   try {
     let s = String(ts).trim();
-
-    // "YYYY-MM-DD HH:MM:SS" -> "YYYY-MM-DDTHH:MM:SS"
-    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(s)) {
-      s = s.replace(" ", "T");
-    }
-
-    // Remove frações de segundo antes de Z ou offset
-    // ex: "2025-10-27T20:38:46.845000+00:00Z" -> "2025-10-27T20:38:46+00:00Z"
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(s)) s = s.replace(" ", "T");
     s = s.replace(/\.\d+(?=(?:Z|[+-]\d{2}:\d{2})?$)/, "");
-
-    // Se tiver offset e também 'Z' ao final (tipo "+00:00Z"), remove o 'Z'
     s = s.replace(/([+-]\d{2}:\d{2})Z$/, "$1");
-
-    // Garante timezone se não houver
-    if (!/(Z|[+-]\d{2}:\d{2})$/.test(s)) {
-      s = s + "Z";
-    }
-
+    if (!/(Z|[+-]\d{2}:\d{2})$/.test(s)) s = s + "Z";
     const d = new Date(s);
-    if (isNaN(d.getTime())) {
-      console.warn("[normalizeTs] Invalid server timestamp:", ts, "-> normalized:", s);
-      return null;
-    }
+    if (isNaN(d.getTime())) return null;
     return s;
-  } catch (err) {
-    console.warn("[normalizeTs] Error parsing server timestamp:", ts, err);
+  } catch {
     return null;
   }
 }
 
 /** Fetch com Bearer + JSON + erros detalhados */
 async function authFetchJSON(path, opts = {}) {
-  // Não alterar a barra final para evitar redirects que dropam Authorization
   const finalPath = String(path);
-
   const token = Auth.getToken?.() || localStorage.getItem("token");
-  if (!token) console.warn("[auth] token ausente no localStorage!");
-  console.debug("[authFetchJSON] token present:", !!token);
 
   let callerHeaders = {};
   if (opts.headers instanceof Headers) {
-    opts.headers.forEach((v, k) => {
-      callerHeaders[k] = v;
-    });
+    opts.headers.forEach((v, k) => (callerHeaders[k] = v));
   } else if (opts.headers && typeof opts.headers === "object") {
     callerHeaders = { ...opts.headers };
   }
@@ -68,18 +50,6 @@ async function authFetchJSON(path, opts = {}) {
   );
   if (opts.body && !(opts.body instanceof FormData) && !hasContentType) {
     callerHeaders["Content-Type"] = "application/json";
-  }
-
-  try {
-    console.debug("[authFetchJSON] fetch", `${API}${finalPath}`, {
-      method: opts.method || "GET",
-      headers: Object.keys(callerHeaders).reduce((acc, k) => {
-        acc[k] = k.toLowerCase() === "authorization" ? "[REDACTED]" : callerHeaders[k];
-        return acc;
-      }, {}),
-    });
-  } catch (e) {
-    // ignore
   }
 
   let res;
@@ -102,11 +72,6 @@ async function authFetchJSON(path, opts = {}) {
   }
 
   if (!res.ok) {
-    if (res.status === 401) {
-      try {
-        console.warn("[authFetchJSON] 401 — token present:", !!token, "path:", finalPath);
-      } catch (e) {}
-    }
     const detail =
       typeof data === "string" ? data : data?.msg || data?.error || JSON.stringify(data);
     throw new Error(`HTTP ${res.status} ${path} → ${detail}`);
@@ -115,14 +80,75 @@ async function authFetchJSON(path, opts = {}) {
 }
 
 /* ============ Normalizadores ============ */
+function normalizeId(any) {
+  if (!any) return null;
+  if (typeof any === "string") return any;
+  if (typeof any === "object") {
+    if (any.$oid) return any.$oid;
+    if (any._id?.$oid) return any._id.$oid;
+    if (any._id && typeof any._id === "string") return any._id;
+  }
+  try { return String(any); } catch { return null; }
+}
+
 function normalizeUser(u, tipoGuess) {
+  const id =
+    u?.id ??
+    u?._id?.$oid ??
+    u?._id ??
+    null;
+
   return {
-    id: u.id || u._id || String(u._id),
-    nome: u.nome || u.name || u.fullname || "Sem nome",
-    email: u.email || "",
-    bio: u.bio || "",
-    tipo: u.tipo || tipoGuess || "", // "prof" | "aluno"
+    id: normalizeId(id),
+    nome: u?.nome || u?.name || u?.fullname || "Sem nome",
+    email: u?.email || "",
+    bio: u?.bio || u?.headline || "",
+    avatarUrl: u?.avatarUrl || u?.avatar_url || "",
+    tipo: u?.tipo || tipoGuess || "", // "prof" | "aluno"
   };
+}
+
+/** Tenta descobrir o ID do "outro" participante com várias formas possíveis do backend */
+function extractOtherId(c, meId) {
+  const meStr = String(meId || "");
+  // 1) participants: pode ser array de strings OU objetos
+  if (Array.isArray(c?.participants)) {
+    const ids = c.participants
+      .map((p) => (typeof p === "string" ? p : p?._id?.$oid || p?._id || p?.id))
+      .map(normalizeId)
+      .filter(Boolean);
+    const other = ids.find((id) => String(id) !== meStr);
+    if (other) return other;
+  }
+  // 2) tentativas diretas comuns
+  const candidates = [
+    c?.other_id, c?.peer_id, c?.to_id, c?.with_id,
+    c?.otherId, c?.peerId, c?.toId, c?.withId,
+    c?.to, c?.with, c?.user_to, c?.user_b, c?.userB, c?.userTwo,
+  ].map(normalizeId).filter(Boolean);
+
+  if (c?.other && (c.other._id || c.other.id)) {
+    candidates.unshift(normalizeId(c.other._id || c.other.id));
+  }
+
+  return candidates.find((id) => String(id) !== meStr) || null;
+}
+
+/* Carrega dados mínimos do peer (aluno/prof) quando a conversa não trouxe */
+async function fetchPeerBrief(id) {
+  const peerId = normalizeId(id);
+  if (!peerId) return { id: peerId };
+  try {
+    const a = await authFetchJSON(`/api/alunos/${peerId}`);
+    return normalizeUser(a, "aluno");
+  } catch {
+    try {
+      const p = await authFetchJSON(`/api/professores/${peerId}`);
+      return normalizeUser(p, "prof");
+    } catch {
+      return { id: peerId };
+    }
+  }
 }
 
 /* ============ Busca de usuários ============ */
@@ -137,15 +163,11 @@ export async function searchUsers(q) {
 
   const arr = [];
   if (alunosRes.status === "fulfilled") {
-    const list = Array.isArray(alunosRes.value)
-      ? alunosRes.value
-      : alunosRes.value.data || [];
+    const list = Array.isArray(alunosRes.value) ? alunosRes.value : alunosRes.value.data || [];
     arr.push(...list.map((u) => normalizeUser(u, "aluno")));
   }
   if (profsRes.status === "fulfilled") {
-    const list = Array.isArray(profsRes.value)
-      ? profsRes.value
-      : profsRes.value.data || [];
+    const list = Array.isArray(profsRes.value) ? profsRes.value : profsRes.value.data || [];
     arr.push(...list.map((u) => normalizeUser(u, "prof")));
   }
 
@@ -157,37 +179,87 @@ export async function searchUsers(q) {
 
 /* ============ Conversas ============ */
 export async function getConversations() {
-  const list = await authFetchJSON("/api/chats/");
-  return list.map((c) => {
-    const lmRaw = c.last_message || c.lastMessage || null;
+  const payload = await authFetchJSON("/api/chats/");
+  const listRaw = Array.isArray(payload?.data) ? payload.data : payload;
+
+  const me = Auth.getUser?.() || {};
+  const meId = me._id || me.id;
+
+  const base = (listRaw || []).map((c) => {
+    const lm = c.last_message || c.lastMessage || null;
     const at = normalizeTs(
-      (lmRaw && (lmRaw.at || lmRaw.created_at || lmRaw.createdAt)) ||
-        c.updated_at ||
-        c.updatedAt ||
-        c.created_at ||
-        c.createdAt ||
-        null
+      (lm && (lm.at || lm.created_at || lm.createdAt)) ||
+      c.updated_at || c.updatedAt || c.created_at || c.createdAt || null
     );
+
+    let other = c.other ? normalizeUser(c.other, c.other?.tipo) : null;
+    if (!other || !other.id) {
+      const otherId = extractOtherId(c, meId);
+      other = otherId ? { id: otherId } : null;
+    }
+
     return {
       id: c.id || c._id,
       title: c.other?.nome || c.title || "Conversa",
-      other: c.other ? normalizeUser(c.other, c.other?.tipo) : null,
-      lastMessage: lmRaw ? { text: lmRaw.text ?? "", at } : at ? { text: "", at } : null,
+      other,
+      lastMessage: lm ? { text: lm.text ?? "", at } : at ? { text: "", at } : null,
+      created_at: c.created_at || c.createdAt,
+      updated_at: c.updated_at || c.updatedAt,
+      participants: c.participants || [],
     };
   });
+
+  // >>> ENRICH com preferFilled (não deixa "" sobrescrever campo bom)
+  const enriched = await Promise.all(
+    base.map(async (c) => {
+      if (!c.other || !c.other.id) return c;
+
+      const brief = await fetchPeerBrief(c.other.id);
+      const mergedOther = {
+        id: c.other.id,
+        nome:     preferFilled(c.other.nome, brief.nome),
+        email:    preferFilled(c.other.email, brief.email),
+        bio:      preferFilled(c.other.bio, brief.bio),
+        avatarUrl:preferFilled(c.other.avatarUrl, brief.avatarUrl),
+        tipo:     preferFilled(c.other.tipo, brief.tipo),
+      };
+
+      return {
+        ...c,
+        title: preferFilled(c.title, mergedOther.nome, "Conversa"),
+        other: mergedOther,
+      };
+    })
+  );
+
+  return enriched;
 }
 
+
+/* ============ Criar/garantir conversa ============ */
 export async function ensureConversationWith(userId) {
   const raw = userId && typeof userId === "object" && userId.$oid ? userId.$oid : userId;
-  const idStr = String(raw);
+  const idStr = normalizeId(raw);
   const c = await authFetchJSON("/api/chats", {
     method: "POST",
     body: JSON.stringify({ user_id: idStr }),
   });
+
+  const brief = await fetchPeerBrief(idStr);
+  const fromServer = c.other ? normalizeUser(c.other, c.other?.tipo) : {};
+  const other = {
+    id: idStr,
+    nome:      preferFilled(fromServer.nome, brief.nome),
+    email:     preferFilled(fromServer.email, brief.email),
+    bio:       preferFilled(fromServer.bio, brief.bio),
+    avatarUrl: preferFilled(fromServer.avatarUrl, brief.avatarUrl),
+    tipo:      preferFilled(fromServer.tipo, brief.tipo),
+  };
+
   return {
     id: c.id || c._id,
-    title: c.other?.nome || "Conversa",
-    other: c.other ? normalizeUser(c.other, c.other?.tipo) : null,
+    title: preferFilled(c.other?.nome, other.nome, "Conversa"),
+    other,
     lastMessage: c.last_message
       ? { text: c.last_message.text ?? "", at: normalizeTs(c.last_message.at) }
       : null,
@@ -199,10 +271,8 @@ export async function getMessages(conversationId, opts = {}) {
   const since = opts.since ? `?since=${encodeURIComponent(opts.since)}` : "";
   const list = await authFetchJSON(`/api/chats/${conversationId}/messages${since}`);
   return list.map((m) => {
-    // Sempre preferir timestamps do servidor
     const serverTime = m.at || m.created_at || m.createdAt;
     const at = serverTime ? normalizeTs(serverTime) : null;
-
     return {
       id: m.id || m._id,
       fromMe:
@@ -210,8 +280,8 @@ export async function getMessages(conversationId, opts = {}) {
           ? m.fromMe
           : m.from === "me" || m.from_is_me === true || false,
       text: m.text,
-      at, // normalized server time
-      created_at: at, // manter os dois campos consistentes
+      at,
+      created_at: at,
     };
   });
 }
@@ -221,40 +291,14 @@ export async function sendMessage(conversationId, text) {
     method: "POST",
     body: JSON.stringify({ text }),
   });
-
-  try {
-    console.debug("[sendMessage] server response:", {
-      id: m.id || m._id,
-      hasAt: !!(m.at || m.created_at || m.createdAt),
-      textLen: typeof m.text === "string" ? m.text.length : 0,
-    });
-  } catch (e) {}
-
-  // Sempre usar o horário do servidor
   const serverTime = m.at || m.created_at || m.createdAt;
-  if (!serverTime) {
-    console.warn(
-      "[sendMessage] Server did not provide timestamp for message; using client time as fallback:",
-      m
-    );
-  }
   let at = normalizeTs(serverTime);
-  if (!at) {
-    at = new Date().toISOString();
-  }
-
-  if (!m.id && !m._id) {
-    console.warn(
-      "[sendMessage] Server did not return a persistent id for the message; it may not be saved on the server yet.",
-      m
-    );
-  }
-
+  if (!at) at = new Date().toISOString();
   return {
     id: m.id || m._id || null,
     fromMe: true,
     text: m.text,
-    at, // normalized server time (or client fallback)
+    at,
     created_at: at,
   };
 }
