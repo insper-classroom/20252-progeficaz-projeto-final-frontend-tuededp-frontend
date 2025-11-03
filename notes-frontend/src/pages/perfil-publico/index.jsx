@@ -2,6 +2,7 @@ import React from "react";
 import { useParams } from "react-router-dom";
 import HeaderLogado from "../../components/header-logado";
 import Footer from "../../components/footer";
+import { getToken } from "../../services/authService";
 import "./index.css";
 
 export default function PerfilPublico(){
@@ -12,10 +13,18 @@ export default function PerfilPublico(){
   React.useEffect(()=>{
     (async ()=>{
       try{
-        const r = await fetch(`/api/alunos/slug/${slug}`);
-        if(!r.ok) throw new Error("Perfil não encontrado");
-        setAluno(await r.json());
-      }catch(e){ setErr(e.message); }
+        // 1) tenta via slug (rota pública)
+        let r = await fetch(`/api/alunos/slug/${slug}`);
+        if(!r.ok){
+          // 2) tenta via ID (precisa de Authorization)
+          const tk = getToken();
+          const headers = tk ? { Authorization: `Bearer ${tk}` } : {};
+          r = await fetch(`/api/alunos/${slug}` , { headers });
+          if(!r.ok) throw new Error("Perfil não encontrado");
+        }
+        const data = await r.json();
+        setAluno(data);
+      }catch(e){ setErr(e.message || "Perfil não encontrado"); }
     })();
   },[slug]);
 
