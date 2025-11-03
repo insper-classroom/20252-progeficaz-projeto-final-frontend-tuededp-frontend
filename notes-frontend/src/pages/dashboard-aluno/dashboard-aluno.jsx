@@ -3,7 +3,7 @@ import HeaderLogado from "../../components/header-logado";
 import Footer from "../../components/footer";
 import { requireAuth, getUser } from "../../services/authService";
 import SectionTitle from "../../components/section-title";
-import TopicsCarousel from "../../components/topics-carousel";
+import GridAluno from "../../components/grid-aluno";
 import WelcomePanel from "../../components/welcome-panel";
 import ProfessoresGrid from "../../components/professores-grid";
 import CTAShare from "../../components/cta-share";
@@ -24,13 +24,7 @@ export default function DashboardAluno() {
         <div className="dashboard-content">
           {/* ===== LINHA SUPERIOR (Grid Layout) ===== */}
           <div className="row-top">
-            {/* Coluna Esquerda - Tópicos */}
-            <div className="topics-column">
-              <SectionTitle>Tópicos em alta</SectionTitle>
-              <TopicsCarousel />
-            </div>
-
-            {/* Coluna Direita - Welcome Panel */}
+            {/* Coluna Direita - Welcome Panel (toda a linha agora) */}
             <aside className="welcome">
               <WelcomePanel nome={user?.nome?.split(" ")[0]} />
             </aside>
@@ -39,7 +33,7 @@ export default function DashboardAluno() {
           {/* ===== Professores em alta ===== */}
           <section className="prof-section">
             <SectionTitle>Professores em alta</SectionTitle>
-            <ProfessoresGrid />
+            <GridAluno />
           </section>
 
           {/* ===== CTA Compartilhar Conhecimento ===== */}
