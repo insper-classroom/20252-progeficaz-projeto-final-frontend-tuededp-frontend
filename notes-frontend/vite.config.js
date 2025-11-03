@@ -10,14 +10,8 @@ export default defineConfig({
         target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => {
-          // Split path and query
-          const [basePath, query] = path.split('?');
-          // Add trailing slash to base path only
-          const newPath = basePath.endsWith('/') ? basePath : `${basePath}/`;
-          // Recombine with query if it exists
-          return query ? `${newPath}?${query}` : newPath;
-        },
+        // Não reescreve caminho — mantém exatamente "/api/..." (evita barra extra no fim)
+        rewrite: (p) => p,
         configure: (proxy, options) => {
           proxy.on('proxyReq', (proxyReq, req, res) => {
             if (req.headers.authorization) {

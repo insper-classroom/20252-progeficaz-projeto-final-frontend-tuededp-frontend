@@ -1,5 +1,7 @@
 // src/pages/chats/chats.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { getToken } from "../../services/authService";
 import {
   searchUsers,
   getConversations,
@@ -71,6 +73,7 @@ function safeTime(...candidates) {
 /* =================================================================== */
 
 export default function ChatsPage() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
 
@@ -207,6 +210,14 @@ export default function ChatsPage() {
     return () => document.removeEventListener("visibilitychange", onVis);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Ir para perfil público do aluno — deixa a página de perfil decidir (slug/id)
+  function goToAlunoProfile(e, userId) {
+    e?.preventDefault();
+    e?.stopPropagation();
+    if (!userId) return;
+    navigate(`/aluno/${userId}`);
+  }
 
   /* ============ Busca de usuários ============ */
   async function onSearch(e) {
@@ -408,10 +419,22 @@ export default function ChatsPage() {
                       className={`conv-item ${c.id === activeId ? "active" : ""}`}
                       onClick={() => selectConversation(c)}
                     >
-                      <Avatar src={avatarSrc} name={name} className="sm" />
+                      <span
+                        onClick={(e) => goToAlunoProfile(e, other?.id, other?.tipo)}
+                        style={{ cursor: "pointer", display: "inline-block" }}
+                        title="Ver perfil"
+                      >
+                        <Avatar src={avatarSrc} name={name} className="sm" />
+                      </span>
                       <div className="conv-main">
                         <div className="title-row">
-                          <strong>{name}</strong>
+                          <strong
+                            onClick={(e) => goToAlunoProfile(e, other?.id, other?.tipo)}
+                            style={{ cursor: "pointer", textDecoration: "underline" }}
+                            title="Ver perfil"
+                          >
+                            {name}
+                          </strong>
                           {badge && <span className="role">{badge}</span>}
                           <time>
                             {safeTime(
@@ -444,10 +467,22 @@ export default function ChatsPage() {
                       "online • responde rápido";
                     return (
                       <div className="peer">
-                        <Avatar src={avatarSrc} name={name} className="lg" />
+                        <span
+                          onClick={(e) => goToAlunoProfile(e, other?.id, other?.tipo)}
+                          style={{ cursor: "pointer", display: "inline-block" }}
+                          title="Ver perfil"
+                        >
+                          <Avatar src={avatarSrc} name={name} className="lg" />
+                        </span>
                         <div>
                           <div className="title-row">
-                            <strong>{name}</strong>
+                            <strong
+                              onClick={(e) => goToAlunoProfile(e, other?.id, other?.tipo)}
+                              style={{ cursor: "pointer", textDecoration: "underline" }}
+                              title="Ver perfil"
+                            >
+                              {name}
+                            </strong>
                             {badge && <span className="role">{badge}</span>}
                           </div>
                           <div className="status muted ellipsis">{status}</div>
