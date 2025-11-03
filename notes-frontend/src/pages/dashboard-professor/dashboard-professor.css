@@ -347,6 +347,37 @@
   color: #92400E;
 }
 
+/* Status Select */
+.status-select {
+  padding: 6px 12px;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  background: #FFFFFF;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 120px;
+}
+
+.status-select:hover:not(:disabled) {
+  border-color: #1E40AF;
+  background: #F8FAFC;
+}
+
+.status-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.status-updating {
+  margin-left: 8px;
+  font-size: 11px;
+  color: #6B7280;
+  font-style: italic;
+}
+
 /* Empty State */
 .empty-state {
   text-align: center;

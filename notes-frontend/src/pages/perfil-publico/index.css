@@ -1,3 +1,32 @@
+.perfil-publico { color: var(--text); }
+.pp-main { max-width: 1000px; margin: 0 auto; padding: 20px; }
+.pp-banner { height: 180px; border-radius: 18px; background-size: cover; background-position: center; margin-bottom: 14px; border: 1px solid var(--outline); }
+.pp-card { background: var(--surface); border: 1px solid var(--outline); border-radius: 16px; padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow); }
+.pp-header { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: center; }
+.pp-avatar { width: 96px; height: 96px; border-radius: 50%; border: 2px solid var(--outline-strong); object-fit: cover; }
+.pp-id h1 { margin: 0; font-size: 22px; font-weight: 650; }
+.pp-headline { margin: 4px 0; opacity: .85; }
+.pp-local { margin: 2px 0 8px; color: var(--text-muted); font-size: 14px; }
+.pp-actions { display: flex; gap: 10px; }
+.pp-grid { display: grid; gap: 14px; }
+@media (min-width: 900px){ .pp-grid { grid-template-columns: 1fr 1fr; } }
+.pp-bio { white-space: pre-wrap; }
+.pp-chips { display:flex; flex-wrap: wrap; gap: 8px; }
+.pp-chip { border:1px solid var(--outline); background: var(--surface-2); border-radius: 999px; padding: 6px 10px; font-size: 13px; }
+.pp-small { font-size: 14px; }
+.pp-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.pp-list-title { font-weight: 600; }
+.pp-list-desc { opacity: .85; }
+.pp-links { list-style:none; padding:0; margin:0; display:flex; gap:12px; }
+.pp-link, .pp-links a { text-decoration: underline; color: inherit; }
+.muted { color: var(--text-muted); }
+
+/* Avaliações */
+.pp-avaliacoes { text-align: center; }
+.pp-avaliacao-media { display: flex; align-items: baseline; justify-content: center; gap: 4px; margin-bottom: 8px; }
+.pp-avaliacao-numero { font-size: 36px; font-weight: 700; color: var(--text); }
+.pp-avaliacao-max { font-size: 20px; opacity: .6; }
+.pp-avaliacao-total { margin: 0; font-size: 14px; color: var(--text-muted); }
 /* ===== Perfil Público – estilo LinkedIn minimal ===== */
 
 /* tokens */

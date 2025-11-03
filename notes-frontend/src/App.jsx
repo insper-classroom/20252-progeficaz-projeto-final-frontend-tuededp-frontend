@@ -15,6 +15,7 @@ import PerfilPublico from './pages/perfil-publico';
 import JunteSeNos from './pages/junte-se-nos/junte-se-nos';
 import ProtectedRoute from './components/ProtectedRoute';
 import ListaProfessores from "./pages/lista-professores/lista-professores.jsx";
+import MinhasAulas from './pages/minhas-aulas/minhas-aulas';
 
 function App() {
   return (
@@ -47,6 +48,14 @@ function App() {
           <Route path="/perfil" element={<PerfilAluno />} />
           <Route path="/perfil-aluno" element={<PerfilAluno />} />
           <Route path="/chats" element={<ChatsPage />} />
+          <Route 
+            path="/minhas-aulas" 
+            element={
+              <ProtectedRoute requiredTipo="aluno">
+                <MinhasAulas />
+              </ProtectedRoute>
+            } 
+          />
           <Route path="/aluno/:slug" element={<PerfilPublico />} />
           <Route path="/professores" element={<ListaProfessores />} />  
           <Route path="/professor/:slug" element={<PerfilPublico />} />
