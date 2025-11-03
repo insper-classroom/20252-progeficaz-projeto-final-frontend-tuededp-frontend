@@ -87,7 +87,8 @@ const HeaderDeslogado = () => {
             setSearchResults([]);
             setShowSuggestions(true);
           }
-        } catch {
+        } catch (error) {
+          console.error('[HeaderDeslogado] Erro ao buscar usuários:', error);
           setSearchResults([]);
           setShowSuggestions(true);
         } finally {
@@ -151,10 +152,10 @@ const HeaderDeslogado = () => {
 
         {/* Barra de busca */}
         <div className="search-wrap" ref={searchRef}>
-          <form onSubmit={handleSearchSubmit}>
+          <form onSubmit={handleSearchSubmit} className="search-form">
             <input
               className="search-input"
-              placeholder="Procure por pessoas, aulas, temas…"
+              placeholder="Procure por pessoas"
               aria-label="Buscar"
               value={searchQuery}
               onChange={handleSearchChange}
@@ -162,20 +163,19 @@ const HeaderDeslogado = () => {
                 if (searchResults.length > 0) setShowSuggestions(true);
               }}
             />
+            <button
+              className="search-icon"
+              aria-label="Buscar"
+              type="submit"
+              onClick={handleSearchSubmit}
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" strokeWidth="2">
+                <circle cx="11" cy="11" r="7" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </button>
             <button className="hidden-submit" type="submit" aria-hidden />
           </form>
-
-          <button
-            className="search-icon"
-            aria-label="Buscar"
-            type="button"
-            onClick={handleSearchSubmit}
-          >
-            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" strokeWidth="2">
-              <circle cx="11" cy="11" r="7" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-          </button>
 
           {/* Dropdown de sugestões */}
           {showSuggestions && (searchResults.length > 0 || isSearching) && (
