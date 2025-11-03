@@ -79,7 +79,6 @@ const HeaderLogado = () => {
     }
   };
   const handleProfile = () => navigate("/perfil");
-  const handleMinhasAulas = () => navigate("/minhas-aulas");
   const handleLogout = () => logout();
 
   // Buscar usuários conforme digita (com debounce)
@@ -257,9 +256,6 @@ const HeaderLogado = () => {
           <div className="dropdown-menu">
             <div className="dropdown-content">
               <button onClick={handleDashboard} className="dropdown-item">Dashboard</button>
-              {isAluno && (
-                <button onClick={handleMinhasAulas} className="dropdown-item">Minhas Aulas</button>
-              )}
               <button onClick={handleProfile} className="dropdown-item">Meus Dados</button>
               <hr className="dropdown-divider" />
               <button onClick={handleLogout} className="dropdown-item logout">Sair</button>
