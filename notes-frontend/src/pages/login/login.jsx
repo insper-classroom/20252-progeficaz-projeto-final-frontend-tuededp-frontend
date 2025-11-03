@@ -27,7 +27,7 @@ export default function Login() {
     }
 
     // vai para a Home (HeaderLogado aparece automaticamente)
-    navigate("/");
+    navigate("/dashboard-aluno");
   }
 
   return (
