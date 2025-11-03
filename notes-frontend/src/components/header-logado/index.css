@@ -25,9 +25,10 @@
   height: 72px;                /* um pouco mais baixo: mais elegante */
   margin: 0 auto;
   padding: 0 24px;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  justify-content: space-between;
+  gap: 16px;
 }
 
 /* ==== Logo ==== */
@@ -270,31 +271,34 @@
     min-width: 200px;
   }
 }
-/* ====== Layout de 3 colunas: logo | busca | ações ====== */
-.header-content{
-  display:grid;
-  grid-template-columns: auto 1fr auto;
-  align-items:center;
-  gap: 16px;
-}
 
 /* ====== Busca (pílula central) ====== */
 .search-wrap{
   position: relative;
-  max-width: 1000%;
-  min-width: 95%;
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
+  flex: 1;
 }
+
+.search-wrap form.search-form {
+  width: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
 .search-input{
   width: 100%;
   height: 44px;
-  padding: 0 44px 0 16px;
+  padding: 0 48px 0 16px;
   border-radius: 24px;
   border: 1px solid #D1D5DB;
   outline: none;
   background: #fff;
   color: #111827;
+  font-size: 14px;
   box-shadow: 0 2px 0 rgba(17,24,39,.03);
+  box-sizing: border-box;
 }
 .search-input::placeholder{ color:#9CA3AF; }
 .search-input:focus {
@@ -302,15 +306,24 @@
   box-shadow: 0 0 0 3px rgba(10, 102, 194, 0.1);
 }
 .search-icon{
-  position:absolute;
-  right: 10px;
-  top: 44%;
-  right: 3%;
+  position: absolute;
+  right: 12px;
+  top: 50%;
   transform: translateY(-50%);
-  width: 32px; height: 32px;
-  border: none; background: transparent;
-  color: #1E3A8A; cursor: pointer;
-  display:grid; place-items:center;
+  width: 32px; 
+  height: 32px;
+  min-width: 32px;
+  border: none; 
+  background: transparent;
+  color: #1E3A8A; 
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  pointer-events: auto;
+  padding: 0;
+  margin: 0;
 }
 
 /* Dropdown de Sugestões */
@@ -428,34 +441,43 @@
 
 /* ====== Responsivo ====== */
 @media (max-width: 1024px){
-  .search-wrap{ max-width: 520px; }
+  .search-wrap{ 
+    max-width: 520px; 
+    min-width: 180px;
+  }
 }
 @media (max-width: 768px){
   .cta-link{ display:none; }
-  .search-wrap{ max-width: 100%; }
+  .search-wrap{ 
+    max-width: 100%; 
+    min-width: 150px;
+  }
   .logo-text{ display:none; }
+  .search-input{
+    height: 40px;
+    font-size: 13px;
+  }
+  .search-icon{
+    width: 28px;
+    height: 28px;
+    right: 10px;
+  }
+}
+@media (max-width: 560px){
+  .search-wrap{ 
+    min-width: 120px;
+  }
+  .search-input{
+    height: 36px;
+    font-size: 12px;
+    padding: 0 36px 0 12px;
+  }
+  .search-icon{
+    width: 24px;
+    height: 24px;
+    right: 8px;
+  }
 }
 button {
   background-color: transparent;
-}
-/* 1) Nudge vertical só do campo de busca (não mexe no layout) */
-:root{
-  --search-nudge: 4px;   /* ajuste fino: 0 a 6px fica bom */
-}
-.search-wrap{
-  top:16%;
-}
-
-/* 2) Corrige o posicionamento do ícone de lupa (centralizado) */
-.search-icon{
-  top: 30%;
-  transform: translateY(-50%);
-  right: 12px;            /* remova o segundo 'right' duplicado */
-}
-
-/* 3) (opcional) Limpa valores estranhos e garante centragem */
-.search-wrap{
-  max-width: 1220px;       /* antes estava 1000% (provoca comportamento estranho) */
-  min-width: 650px;       /* ajuste como quiser ou remova no mobile */
-  align-self: center;     /* garante centrado no grid */
 }

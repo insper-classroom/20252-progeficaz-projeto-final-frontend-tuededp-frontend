@@ -399,14 +399,33 @@ export const buscarUsuarios = async (query, limit = 10) => {
       };
     }
 
+    const alunosUrl = `${API_BASE_URL}/api/alunos?q=${encodeURIComponent(query)}&limit=${limit}`;
+    const professoresUrl = `${API_BASE_URL}/api/professores?q=${encodeURIComponent(query)}&limit=${limit}`;
+
     // Buscar alunos e professores em paralelo
     const [alunosRes, professoresRes] = await Promise.all([
-      fetch(`${API_BASE_URL}/api/alunos?q=${encodeURIComponent(query)}&limit=${limit}`),
-      fetch(`${API_BASE_URL}/api/professores?q=${encodeURIComponent(query)}&limit=${limit}`)
+      fetch(alunosUrl),
+      fetch(professoresUrl)
     ]);
 
-    const alunos = alunosRes.ok ? (await alunosRes.json()).data || [] : [];
-    const professores = professoresRes.ok ? (await professoresRes.json()).data || [] : [];
+    let alunos = [];
+    let professores = [];
+
+    if (alunosRes.ok) {
+      const alunosData = await alunosRes.json();
+      alunos = alunosData.data || [];
+    } else {
+      const errorText = await alunosRes.text();
+      console.error('[buscarUsuarios] Erro ao buscar alunos:', alunosRes.status, errorText);
+    }
+
+    if (professoresRes.ok) {
+      const professoresData = await professoresRes.json();
+      professores = professoresData.data || [];
+    } else {
+      const errorText = await professoresRes.text();
+      console.error('[buscarUsuarios] Erro ao buscar professores:', professoresRes.status, errorText);
+    }
 
     // Combinar resultados
     const resultados = [
@@ -429,7 +448,7 @@ export const buscarUsuarios = async (query, limit = 10) => {
       data: resultados
     };
   } catch (error) {
-    console.error('Erro ao buscar usuários:', error);
+    console.error('[buscarUsuarios] Erro ao buscar usuários:', error);
     return {
       success: false,
       error: error.message || 'Erro de conexão',
