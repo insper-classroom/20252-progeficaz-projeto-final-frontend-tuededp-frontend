@@ -1,264 +1,295 @@
-/* dashboard-aluno.css — SUBSTITUIÇÃO COMPLETA
-   Cole TODO este conteúdo no arquivo dashboard-aluno.css (substituir)
-*/
-
-/* ===== Variáveis / base ===== */
-:root{
-  --bg: #F8FAFC;
-  --text-dark: #0F1724;
-  --muted: #64748B;
-  --accent-blue: #2C6ECB;
-  --rule-width: 220px;        /* largura padrão da barra azul sob títulos */
-  --header-offset: 96px;      /* ajuste se teu header fixo for maior/menor */
+/* Dashboard Aluno */
+.dashboard-aluno {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f5f7fa;
+  min-height: 100vh;
 }
 
-*{box-sizing:border-box}
+/* Header */
+.header h1 { color: #1e40af; font-size: 2rem; font-weight: 700; margin: 0 0 0.5rem; }
+.header p { color: #64748b; margin: 0 0 2rem; }
 
-/* ===== Base layout ===== */
-.dashboard-aluno-container{
-  min-height:100vh;
-  display:flex;
-  flex-direction:column;
-  background:var(--bg);
-  color:var(--text-dark);
-}
-.dashboard-main{ flex:1; padding:40px 20px; }
-.dashboard-content{
-  max-width:1240px;
-  margin:0 auto;
-  padding-inline:16px;
+/* Stats */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
 }
 
-/* ===== Row top: Tópicos | Welcome =====
-   Grid com coluna esquerda maior e painel à direita
-   o painel ocupa as duas linhas (título + carrossel)
-*/
-.row-top{
-  display:grid;
-  grid-template-columns: minmax(0,1.6fr) 360px;
-  grid-template-rows: auto auto;
-  gap:48px;
-  align-items:start;
-  margin-bottom:48px;
-}
-.row-top > *{ min-width:0; }
-
-/* Coluna de tópicos empilha título + carrossel */
-.topics-column{
-  grid-column:1;
-  display:flex;
-  flex-direction:column;
-  gap:18px;
-  padding-right:12px; /* evita colisão visual com painel direito */
-  padding-bottom: 80px; /* espaço extra para afastar scroller do conteúdo seguinte */
-  min-width:0;
-  z-index:1;
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
 }
 
-/* Welcome (painel direito) ocupa duas linhas e é sticky para não sumir
-   Ajuste --header-offset conforme teu header fixo (se não tiver, deixá-lo menor) */
-.welcome{
-  grid-column:2;
-  grid-row:1 / span 2;
-  justify-self:end;
-  align-self:start;
-  display:flex;
-  align-items:flex-start;
-  position:relative;
-  z-index:10;
-}
-.welcome-panel{
-  width:100%;
-  max-width:340px;
-  padding:0;
-  text-align:right;
-  background:transparent;
-  position: sticky;
-  top: calc(var(--header-offset) + 12px); /* deixa o painel mais "solto" do scroller */
-  z-index: 30; /* acima do scroller */
-}
-.welcome-panel h2{
-  margin:0;
-  font-weight:700;
-  color:var(--text-dark);
-  line-height:1.02;
-  font-size: clamp(28px, 3.5vw, 44px);
-  word-break:break-word;
+.card:hover { transform: translateY(-2px); }
+.card.highlight { background: linear-gradient(135deg, #3b82f6, #1e40af); color: white; }
+.num { font-size: 2.5rem; font-weight: 700; color: #1e40af; margin-bottom: 0.5rem; }
+.card.highlight .num { color: white; }
+.card div:last-child { color: #64748b; font-size: 0.95rem; }
+.card.highlight div:last-child { color: rgba(255,255,255,0.9); }
+
+/* Section */
+.section {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-/* ===== Section title base (títulos das seções) ===== */
-.section-title{ margin:0 0 12px 0; }
-.section-title h3{
-  font-size: 28px;
-  color:#1E3A5F;
-  margin:0 0 8px 0;
-  font-weight:700;
-  letter-spacing:-0.01em;
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e2e8f0;
 }
 
-/* Barra azul "rule" UNIVERSAL: largura fixa e alinhamento respeita text-align do container */
-.section-title .rule{
-  display:inline-block;              /* respeita text-align do .section-title */
-  width: var(--rule-width);
-  height: 3px;
-  background: var(--accent-blue);
-  border-radius: 999px;
-  margin-top: 12px;
+.section-header h2 {
+  color: #1e40af;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-/* ===== CARROSSEL (Tópicos em alta) — força 4 cards inteiros no desktop ===== */
-/* scroller principal - sem padding lateral para evitar "meio-card" */
-.scroller{
-  display:flex;
-  gap:18px;
-  overflow-x:auto;
-  overflow-y:hidden;
-  scroll-snap-type:x mandatory;
-  padding:0;               /* sem padding lateral, evita meio-card */
-  -webkit-overflow-scrolling:touch;
-  scroll-padding-left:0;
-  scrollbar-width:thin;
-  scrollbar-color: #CBD5E1 #F1F5F9;
-  z-index:2; /* abaixo do welcome-panel */
-}
-/* scrollbar cosmetics */
-.scroller::-webkit-scrollbar{ height:8px }
-.scroller::-webkit-scrollbar-track{ background:#F1F5F9; border-radius:4px }
-.scroller::-webkit-scrollbar-thumb{ background:#CBD5E1; border-radius:4px }
-
-/* 4 cards inteiros no desktop: largura = (100% - totalGaps)/4
-   totalGaps = gap * (4 - 1) = 18 * 3 = 54px */
-.scroller > *{
-  flex: 0 0 calc((100% - 54px)/4);
-  max-width: calc((100% - 54px)/4);
-  scroll-snap-align:start;
-  box-sizing:border-box;
-  overflow:visible; /* evita cortar sombras */
+.section-header select {
+  padding: 0.5rem 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
 }
 
-/* responsivo: 3 / 2 / 1 */
-@media (max-width:1200px){
-  .scroller > *{ flex:0 0 calc((100% - 36px)/3); max-width: calc((100% - 36px)/3); }
-}
-@media (max-width:900px){
-  .scroller > *{ flex:0 0 calc((100% - 18px)/2); max-width: calc((100% - 18px)/2); }
-}
-@media (max-width:520px){
-  .scroller > *{ flex:0 0 100%; max-width:100%; }
-}
+.section-header select:focus { outline: none; border-color: #3b82f6; }
 
-/* centraliza as setas (se existirem) */
-.arrows{ display:flex; gap:12px; justify-content:center; align-items:center; margin-top:18px }
-.arrows button{
-  width:40px; height:40px; border-radius:10px; border:1px solid #E2E8F0; background:white; color:var(--accent-blue);
-  display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:18px;
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: capitalize;
 }
 
-/* ===== Topic card (mantive seu estilo) ===== */
-.topic-card{
-  width:100%;
-  border-radius:14px;
-  box-shadow:0 2px 10px rgba(16,24,40,0.06);
-  background:white;
-  overflow:visible;
-  transition:transform .2s, box-shadow .2s;
-}
-.topic-card:hover{ transform:translateY(-2px); box-shadow:0 4px 12px rgba(16,24,40,0.12) }
-.topic-card header{ padding:12px 14px; display:flex; align-items:center; gap:10px; background:#FAFBFC; border-bottom:1px solid #F1F5F9; }
-.topic-card .avatar{ width:36px; height:36px; background:#E0E7FF; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#6366F1; font-weight:600; font-size:14px; flex-shrink:0; }
-.topic-card .meta{ display:flex; flex-direction:column; gap:2px; flex:1; min-width:0; }
-.topic-card .meta strong{ font-size:14px; color:#1E293B; font-weight:600; }
-.topic-card .meta small{ font-size:12px; color:#64748B; }
-.topic-card .media{ height:150px; background:#F8F9FB; display:flex; align-items:center; justify-content:center; padding:20px; }
-.topic-card .media-placeholder{ display:flex; align-items:center; justify-content:center; gap:16px; opacity:.4; }
-.topic-card .media-icon{ width:44px; height:44px; color:#94A3B8; }
-.topic-card .body{ padding:14px; display:flex; flex-direction:column; }
-.topic-card h4{ font-size:16px; margin:0 0 4px 0; font-weight:600; color:#1E293B; line-height:1.3; }
-.topic-card .body > small{ color:#64748B; font-size:13px; margin-bottom:10px; }
+.badge-agendada { background: #dbeafe; color: #1e40af; }
+.badge-confirmada { background: #d1fae5; color: #065f46; }
+.badge-concluida { background: #f0fdf4; color: #166534; }
+.badge-cancelada { background: #fee2e2; color: #991b1b; }
+.badge-ausente { background: #fef3c7; color: #92400e; }
+.badge-alert { background: #fca5a5; color: #7f1d1d; padding: 0.25rem 0.6rem; font-size: 0.8rem; }
 
-/* clamp para parágrafo (corrige aviso do editor) */
-.line-clamp-3,
-.topic-card p{
-  font-size:14px;
-  line-height:1.5;
-  color:var(--muted);
-  margin:0 0 14px 0;
-  display:-webkit-box;        /* obrigatório para webkit-line-clamp */
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp:3;       /* funciona em Chrome/Safari */
-  line-clamp:3;               /* tent. padronizada (editor) */
-  overflow:hidden;
+/* Cards List */
+.cards-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
 }
 
-/* ações */
-.topic-card .actions{ display:flex; gap:8px; margin-top:auto }
-.btn{ padding:8px 16px; font-size:13px; border-radius:20px; border:none; cursor:pointer; font-weight:500; transition:all .2s; flex:1 }
-.btn.secondary{ background:#F1F5F9; color:#475569 }
-.btn.primary{ background:#6366F1; color:white }
-
-/* ===== Professores em alta (ajustado) ===== */
-/* removendo a linha acima (pedido) */
-.prof-section::before{ display:none !important; }
-
-.prof-section{
-  position:relative;
-  margin:56px 0 40px;
-  padding-top:8px;
-  overflow:visible;
+.aula-card {
+  background: linear-gradient(to right, #fffbeb, white);
+  border: 1px solid #f59e0b;
+  border-radius: 10px;
+  padding: 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-/* título alinhado à esquerda (igual Tópicos em alta) por padrão */
-.prof-section .section-title{ text-align:left; margin:0 0 8px 0 }
-.prof-section .section-title h3{
-  font-size:36px;
-  font-weight:600; /* se quiser mais fino, use 500 */
-  color:#123e63;
-  margin:0;
-  line-height:1.05;
+.aula-card h3 { color: #1e293b; font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem; }
+.prof { color: #64748b; font-size: 0.9rem; margin: 0.25rem 0; }
+.date { color: #94a3b8; font-size: 0.85rem; margin: 0.25rem 0 0; }
+
+.btn-avaliar {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  border: none;
+  padding: 0.65rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
-/* barra azul sob o título (já padronizada por .section-title .rule)*/
+.btn-avaliar:hover { transform: translateY(-1px); }
 
-/* grid dos professores */
-.prof-grid{
-  display:grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap:28px;
-  max-width:1120px;
-  margin:22px 0 0;
-  align-items:start;
-  justify-items:stretch;
-  padding:0 8px;
-  box-sizing:border-box;
+/* Table */
+table { width: 100%; border-collapse: collapse; }
+th {
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+  text-align: left;
+  padding: 1rem;
+  font-size: 0.9rem;
+  border-bottom: 2px solid #e2e8f0;
 }
-.prof-grid > *{ width:100%; max-width:360px; box-sizing:border-box }
+td { padding: 1rem; border-bottom: 1px solid #f1f5f9; color: #334155; }
+tbody tr:hover { background: #f8fafc; }
 
-/* leve estilização dos cards (se preciso) */
-.prof-grid > *{ background:#fff; border-radius:10px; border:1px solid #EEF2F7; box-shadow: 0 6px 18px rgba(14,30,70,0.04) }
-
-.prof-section .see-more, .prof-section .veja-mais, .prof-section .see-more-link{
-  display:block; text-align:center; color:var(--accent-blue); font-weight:600; margin:18px auto 0; text-decoration:none;
-}
-
-/* responsividade */
-@media (max-width:1024px){
-  .prof-grid{ grid-template-columns: repeat(2,1fr); max-width:900px }
-  .section-title h3{ font-size:32px }
-  :root{ --rule-width: 160px } /* barra azul menor */
-}
-@media (max-width:720px){
-  .prof-grid{ grid-template-columns: 1fr; max-width:520px; padding: 0 16px }
-  .section-title h3{ font-size:26px }
-  :root{ --rule-width: 120px }
+/* Avaliações */
+.aval-list { display: grid; gap: 1rem; }
+.aval-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1.25rem;
 }
 
-/* ===== CTA (Share) ===== */
-.cta-section{ margin:56px 0 80px; text-align:center }
-.cta-section .section-title{ text-align:left } /* mantém consistência com Tópicos */
+.aval-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
 
-/* ===== Correções finais possíveis =====
-   - Se o welcome continuar sobrepondo algo, aumenta --header-offset ou
-     diminua padding-bottom em .topics-column.
-   - Se quiser a barra azul CENTRALIZADA em todas as seções, ajuste .section-title { text-align:center }.
-*/
+.aval-header h3 { color: #1e293b; font-size: 1.1rem; font-weight: 600; margin: 0 0 0.25rem; }
 
+.nota-badge {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  text-align: center;
+  min-width: 60px;
+}
+
+.nota-val { font-size: 1.5rem; font-weight: 700; }
+.aval-texto { color: #475569; line-height: 1.6; margin: 0 0 0.75rem; }
+
+/* Empty & Loading */
+.empty, .loading { text-align: center; padding: 3rem 1rem; color: #94a3b8; }
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal {
+  background: white;
+  border-radius: 12px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.modal-header h2 { color: #1e293b; font-size: 1.5rem; margin: 0; }
+.modal-header button {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #94a3b8;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+}
+
+.modal-body { padding: 1.5rem; }
+.aula-info { background: #f8fafc; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; }
+.aula-info h3 { color: #1e293b; font-size: 1.2rem; margin: 0 0 0.5rem; }
+.aula-info p { color: #64748b; margin: 0; }
+
+.form-group { margin-bottom: 1.5rem; }
+.form-group label { display: block; color: #334155; font-weight: 600; margin-bottom: 0.5rem; }
+
+.nota-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.nota-container input {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: #e2e8f0;
+  outline: none;
+}
+
+.nota-container input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+}
+
+.nota-display {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #3b82f6;
+  min-width: 40px;
+  text-align: center;
+}
+
+textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+textarea:focus { outline: none; border-color: #3b82f6; }
+
+.modal-footer {
+  display: flex;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+  justify-content: flex-end;
+}
+
+.btn-pri, .btn-sec {
+  padding: 0.65rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-pri { background: linear-gradient(135deg, #3b82f6, #1e40af); color: white; }
+.btn-sec { background: white; color: #64748b; border: 1px solid #cbd5e1; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dashboard-aluno { padding: 1rem; }
+  .stats { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+  .section-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .cards-list { grid-template-columns: 1fr; }
+  .aula-card { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .btn-avaliar { width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .stats { grid-template-columns: 1fr; }
+}

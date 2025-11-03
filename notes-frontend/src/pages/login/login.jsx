@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { login } from "../../services/authService";
+import { login, getTipo } from "../../services/authService";
 import HeaderDeslogado from "../../components/header-deslogado";
 import Footer from "../../components/footer";
 import "./login.css";
@@ -26,8 +26,17 @@ export default function Login() {
       return;
     }
 
-    // vai para a Home (HeaderLogado aparece automaticamente)
-    navigate("/dashboard-aluno");
+    // Redireciona baseado no tipo de usuário
+    const tipo = getTipo();
+    const tipoNormalizado = tipo?.toLowerCase();
+    
+    // Mapear tipos para dashboards
+    if (tipoNormalizado === 'prof' || tipoNormalizado === 'professor') {
+      navigate("/dashboard-professor");
+    } else {
+      // Por padrão, vai para dashboard do aluno
+      navigate("/dashboard-aluno");
+    }
   }
 
   return (

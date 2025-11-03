@@ -5,6 +5,7 @@ import Footer from "../../components/footer";
 import { getToken } from "../../services/authService";
 import AgendarAula from "../../components/agendar-aula";
 import { getUser, getTipo } from "../../services/authService";
+import { getEstatisticasProfessor, listarAvaliacoes } from "../../services/avaliacoesService";
 
 import "./index.css";
 
@@ -42,6 +43,8 @@ export default function PerfilPublico(){
   const [usuario, setUsuario] = React.useState(null);
   const [err, setErr] = React.useState("");
   const [mostrarAgendar, setMostrarAgendar] = React.useState(false);
+  const [statsAvaliacoes, setStatsAvaliacoes] = React.useState(null);
+  const [avaliacoes, setAvaliacoes] = React.useState([]);
 
   const isProfessor = location.pathname.startsWith("/professor/");
   const me = getUser();
@@ -72,6 +75,22 @@ export default function PerfilPublico(){
         if (!r || !r.ok) throw new Error("Perfil não encontrado");
         data = await r.json();
         setUsuario(data);
+
+        // Se for professor, busca estatísticas e lista de avaliações
+        if (isProfessor && data._id) {
+          try {
+            // Busca estatísticas
+            const stats = await getEstatisticasProfessor(data._id);
+            setStatsAvaliacoes(stats);
+            
+            // Busca lista de avaliações
+            const avaliacoesList = await listarAvaliacoes({ id_prof: data._id });
+            setAvaliacoes(Array.isArray(avaliacoesList) ? avaliacoesList : []);
+          } catch (e) {
+            console.error("[perfil-publico] Erro ao buscar avaliações:", e);
+            setAvaliacoes([]);
+          }
+        }
       } catch (e) {
         setErr(e.message || "Perfil não encontrado");
       }
@@ -153,6 +172,76 @@ export default function PerfilPublico(){
         </section>
 
         <div className="pp-grid">
+          {/* Média de Avaliações (apenas para professores) */}
+          {isProfessor && (
+            <section className="pp-card">
+              <h3>Avaliações</h3>
+              {statsAvaliacoes ? (
+                <div className="pp-avaliacoes">
+                  <div className="pp-avaliacao-media">
+                    <span className="pp-avaliacao-numero">
+                      {statsAvaliacoes.media ? statsAvaliacoes.media.toFixed(1) : "N/A"}
+                    </span>
+                    <span className="pp-avaliacao-max">/ 10</span>
+                  </div>
+                  {statsAvaliacoes.total && (
+                    <p className="pp-avaliacao-total">
+                      {statsAvaliacoes.total} avaliação{statsAvaliacoes.total !== 1 ? "ões" : ""}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="pp-small muted">Nenhuma avaliação ainda</p>
+              )}
+              
+              {/* Lista de avaliações individuais */}
+              {avaliacoes.length > 0 && (
+                <div className="pp-avaliacoes-list" style={{ marginTop: "1.5rem" }}>
+                  <h4 style={{ marginBottom: "1rem", fontSize: "1rem" }}>Avaliações Recebidas</h4>
+                  {avaliacoes.map((avaliacao) => (
+                    <div key={avaliacao._id || avaliacao.id} className="pp-avaliacao-item" style={{
+                      padding: "1rem",
+                      marginBottom: "0.75rem",
+                      backgroundColor: "#f8f9fa",
+                      borderRadius: "8px",
+                      borderLeft: "3px solid #0A66C2"
+                    }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.5rem" }}>
+                        <div>
+                          <strong style={{ display: "block" }}>
+                            {avaliacao.aluno?.nome || avaliacao.id_aluno?.nome || "Aluno"}
+                          </strong>
+                          {avaliacao.aula?.titulo || avaliacao.id_aula?.titulo ? (
+                            <span style={{ fontSize: "0.875rem", color: "#666" }}>
+                              {avaliacao.aula?.titulo || avaliacao.id_aula?.titulo}
+                            </span>
+                          ) : null}
+                        </div>
+                        <span style={{
+                          fontSize: "1.25rem",
+                          fontWeight: "bold",
+                          color: "#0A66C2"
+                        }}>
+                          {avaliacao.nota}/10
+                        </span>
+                      </div>
+                      {avaliacao.texto && (
+                        <p style={{ margin: 0, fontSize: "0.9rem", color: "#333" }}>
+                          "{avaliacao.texto}"
+                        </p>
+                      )}
+                      {avaliacao.created_at && (
+                        <p style={{ marginTop: "0.5rem", fontSize: "0.75rem", color: "#999" }}>
+                          {new Date(avaliacao.created_at).toLocaleDateString("pt-BR")}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
           <section className="pp-card">
             <h3>Sobre</h3>
             <p className="pp-bio">{usuario.bio || usuario.historico_academico_profissional || "Sem biografia."}</p>

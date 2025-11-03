@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { logout } from "../../services/authService";
+import { logout, getUser, getTipo } from "../../services/authService";
 import logo from "../../assets/logo_estudai.jpg";
 import { useNavigate } from "react-router-dom";
 import { buscarUsuarios } from "../../services/apiService";
@@ -66,8 +66,18 @@ const HeaderLogado = () => {
   const suggestionsRef = useRef(null);
   const navigate = useNavigate();
 
+  const user = getUser();
+  const tipo = getTipo() || user?.tipo;
+  const isAluno = tipo?.toLowerCase() === "aluno";
+
   const handleLogoClick = () => navigate("/");
-  const handleDashboard = () => navigate("/dashboard-aluno");
+  const handleDashboard = () => {
+    if (isAluno) {
+      navigate("/dashboard-aluno");
+    } else {
+      navigate("/dashboard-professor");
+    }
+  };
   const handleProfile = () => navigate("/perfil");
   const handleLogout = () => logout();
 

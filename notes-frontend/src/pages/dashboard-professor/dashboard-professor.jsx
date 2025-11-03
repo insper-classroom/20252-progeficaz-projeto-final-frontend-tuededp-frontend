@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import HeaderLogado from '../../components/header-logado';
 import Footer from '../../components/footer';
 import { requireAuth, getUser } from '../../services/authService';
-import { buscarAgendamentosProfessor, buscarAvaliacoesProfessor, buscarStatsProfessor } from '../../services/apiService';
+import { buscarAgendamentosProfessor, buscarAvaliacoesProfessor, buscarStatsProfessor, atualizarStatusAgendamento } from '../../services/apiService';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import './dashboard-professor.css';
 
@@ -16,7 +16,20 @@ const DashboardProfessor = () => {
   const [loading, setLoading] = useState(true);
   const [periodoGrafico, setPeriodoGrafico] = useState('mes'); // 'mes', 'semana', 'ano'
   const [erro, setErro] = useState(null);
+  const [atualizandoStatus, setAtualizandoStatus] = useState({}); // { agendamentoId: true/false }
   const agendamentosCount = agendamentos ? agendamentos.length : 0;
+
+  // Helpers de KPIs (fallback quando API de stats não retornar)
+  const calcularNotaMedia = (items) => {
+    if (!items || items.length === 0) return 0;
+    const soma = items.reduce((acc, a) => acc + (Number(a.nota) || 0), 0);
+    return soma / items.length;
+  };
+
+  const totalAvaliacoesKPI = (stats?.total_avaliacoes ?? 0) || avaliacoes.length;
+  const notaMediaKPI = (stats?.nota_media ?? 0) || calcularNotaMedia(avaliacoes);
+  const totalAulasKPI = agendamentos.length;
+  const alunosUnicosKPI = alunosUnicos.length;
 
   useEffect(() => {
     if (!requireAuth()) {
@@ -75,20 +88,35 @@ const DashboardProfessor = () => {
       }
 
       // Buscar avaliações
+      console.log('[dashboard-professor] Buscando avaliações para professor:', professorId);
       const avaliacoesRes = await buscarAvaliacoesProfessor(professorId);
+      console.log('[dashboard-professor] Resposta de avaliações:', avaliacoesRes);
       if (avaliacoesRes.success && avaliacoesRes.data) {
+        console.log('[dashboard-professor] Total de avaliações encontradas:', avaliacoesRes.data.length);
         setAvaliacoes(avaliacoesRes.data);
       } else {
-        console.warn('Nenhuma avaliação encontrada:', avaliacoesRes.error);
+        console.warn('[dashboard-professor] Nenhuma avaliação encontrada:', avaliacoesRes.error);
         setAvaliacoes([]);
       }
 
       // Buscar estatísticas
+      console.log('[dashboard-professor] Buscando estatísticas para professor:', professorId);
       const statsRes = await buscarStatsProfessor(professorId);
+      console.log('[dashboard-professor] Resposta de estatísticas:', statsRes);
       if (statsRes.success && statsRes.data) {
-        setStats(statsRes.data);
+        console.log('[dashboard-professor] Estatísticas recebidas:', statsRes.data);
+        // Normalizar dados para aceitar diferentes formatos do backend
+        const statsData = statsRes.data;
+        const normalizedStats = {
+          total_avaliacoes: statsData.total_avaliacoes || statsData.total || 0,
+          nota_media: statsData.nota_media || statsData.media || 0,
+          nota_min: statsData.nota_min || statsData.min || 0,
+          nota_max: statsData.nota_max || statsData.max || 0
+        };
+        console.log('[dashboard-professor] Estatísticas normalizadas:', normalizedStats);
+        setStats(normalizedStats);
       } else {
-        console.warn('Estatísticas não disponíveis:', statsRes.error);
+        console.warn('[dashboard-professor] Estatísticas não disponíveis:', statsRes.error);
         // Criar stats padrão se não encontrar
         setStats({
           total_avaliacoes: 0,
@@ -115,47 +143,70 @@ const DashboardProfessor = () => {
   };
 
   const prepararGrafico = (agendamentos) => {
-    if (!agendamentos || agendamentos.length === 0) {
-      setGraficoData([]);
-      return;
-    }
-
     const agora = new Date();
+    const anoAtual = agora.getFullYear();
     const dataMap = new Map();
 
-    agendamentos.forEach(agendamento => {
-      if (!agendamento.data_hora) return;
-      
-      try {
-        const dataAula = new Date(agendamento.data_hora);
-        if (isNaN(dataAula.getTime())) return; // Data inválida
-        
-        let chave = '';
-
-        if (periodoGrafico === 'semana') {
-          // Últimas 7 semanas
-          const diffTime = agora - dataAula;
-          const diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
-          if (diffWeeks >= 0 && diffWeeks < 7) {
-            chave = `${7 - diffWeeks} semanas atrás`;
-          }
-        } else if (periodoGrafico === 'mes') {
-          // Últimos 6 meses
-          const ano = dataAula.getFullYear();
-          const mes = dataAula.getMonth();
-          chave = `${String(mes + 1).padStart(2, '0')}/${ano}`;
-        } else if (periodoGrafico === 'ano') {
-          // Últimos 3 anos
-          chave = `${dataAula.getFullYear()}`;
-        }
-
-        if (chave) {
-          dataMap.set(chave, (dataMap.get(chave) || 0) + 1);
-        }
-      } catch (error) {
-        console.warn('Erro ao processar data do agendamento:', error);
+    // Gerar todos os períodos necessários
+    if (periodoGrafico === 'semana') {
+      // Todos os dias da semana
+      const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+      diasSemana.forEach(dia => {
+        dataMap.set(dia, 0);
+      });
+    } else if (periodoGrafico === 'mes') {
+      // Todos os meses do ano atual
+      for (let mes = 1; mes <= 12; mes++) {
+        const chave = `${String(mes).padStart(2, '0')}/${anoAtual}`;
+        dataMap.set(chave, 0);
       }
-    });
+    } else if (periodoGrafico === 'ano') {
+      // Últimos 3 anos
+      for (let i = 2; i >= 0; i--) {
+        const ano = anoAtual - i;
+        dataMap.set(`${ano}`, 0);
+      }
+    }
+
+    // Processar agendamentos e contar
+    if (agendamentos && agendamentos.length > 0) {
+      agendamentos.forEach(agendamento => {
+        if (!agendamento.data_hora) return;
+        
+        try {
+          const dataAula = new Date(agendamento.data_hora);
+          if (isNaN(dataAula.getTime())) return; // Data inválida
+          
+          let chave = '';
+
+          if (periodoGrafico === 'semana') {
+            // Obter o dia da semana (0 = Domingo, 1 = Segunda, etc.)
+            const diaSemana = dataAula.getDay();
+            const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+            chave = diasSemana[diaSemana];
+          } else if (periodoGrafico === 'mes') {
+            // Apenas meses do ano atual
+            const ano = dataAula.getFullYear();
+            if (ano === anoAtual) {
+              const mes = dataAula.getMonth();
+              chave = `${String(mes + 1).padStart(2, '0')}/${ano}`;
+            }
+          } else if (periodoGrafico === 'ano') {
+            // Últimos 3 anos
+            const ano = dataAula.getFullYear();
+            if (ano >= anoAtual - 2 && ano <= anoAtual) {
+              chave = `${ano}`;
+            }
+          }
+
+          if (chave && dataMap.has(chave)) {
+            dataMap.set(chave, (dataMap.get(chave) || 0) + 1);
+          }
+        } catch (error) {
+          console.warn('Erro ao processar data do agendamento:', error);
+        }
+      });
+    }
 
     // Converter para array e ordenar
     const dados = Array.from(dataMap.entries())
@@ -163,7 +214,9 @@ const DashboardProfessor = () => {
       .sort((a, b) => {
         try {
           if (periodoGrafico === 'semana') {
-            return parseInt(a.periodo) - parseInt(b.periodo);
+            // Ordenar por ordem dos dias da semana
+            const ordemDias = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+            return ordemDias.indexOf(a.periodo) - ordemDias.indexOf(b.periodo);
           } else if (periodoGrafico === 'mes') {
             const [mesA, anoA] = a.periodo.split('/');
             const [mesB, anoB] = b.periodo.split('/');
@@ -181,11 +234,8 @@ const DashboardProfessor = () => {
 
   // Efeito para atualizar gráfico quando período mudar ou quando agendamentos forem carregados
   useEffect(() => {
-    if (agendamentosCount > 0 && agendamentos) {
-      prepararGrafico(agendamentos);
-    } else {
-      setGraficoData([]);
-    }
+    // Sempre preparar o gráfico, mesmo sem agendamentos, para mostrar todos os períodos
+    prepararGrafico(agendamentos || []);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [periodoGrafico, agendamentosCount]);
 
@@ -202,14 +252,58 @@ const DashboardProfessor = () => {
   };
 
   const getStatusBadgeClass = (status) => {
+    const statusLower = status?.toLowerCase() || '';
     const classes = {
       'agendada': 'status-badge status-agendada',
       'confirmada': 'status-badge status-confirmada',
       'concluida': 'status-badge status-concluida',
+      'concluída': 'status-badge status-concluida',
       'cancelada': 'status-badge status-cancelada',
       'ausente': 'status-badge status-ausente'
     };
-    return classes[status] || 'status-badge';
+    return classes[statusLower] || 'status-badge';
+  };
+
+  const handleAlterarStatus = async (agendamento, novoStatus) => {
+    const agendamentoId = agendamento._id || agendamento.id;
+    if (!agendamentoId) {
+      alert('ID do agendamento não encontrado');
+      return;
+    }
+
+    // Confirmação para status concluída
+    if (novoStatus === 'concluida' || novoStatus === 'concluída') {
+      const confirmar = window.confirm(
+        'Tem certeza que deseja marcar este agendamento como concluído? ' +
+        'Após isso, o aluno poderá avaliar a aula.'
+      );
+      if (!confirmar) return;
+    }
+
+    setAtualizandoStatus(prev => ({ ...prev, [agendamentoId]: true }));
+
+    try {
+      const resultado = await atualizarStatusAgendamento(agendamentoId, novoStatus);
+      
+      if (resultado.success) {
+        // Atualiza o agendamento na lista local
+        setAgendamentos(prev => 
+          prev.map(ag => 
+            (ag._id === agendamentoId || ag.id === agendamentoId)
+              ? { ...ag, status: novoStatus }
+              : ag
+          )
+        );
+        alert('Status atualizado com sucesso!');
+      } else {
+        alert(`Erro ao atualizar status: ${resultado.error}`);
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar status:', error);
+      alert('Erro ao atualizar status. Tente novamente.');
+    } finally {
+      setAtualizandoStatus(prev => ({ ...prev, [agendamentoId]: false }));
+    }
   };
 
   if (loading) {
@@ -245,19 +339,19 @@ const DashboardProfessor = () => {
             {stats && (
               <div className="stats-cards">
                 <div className="stat-card">
-                  <div className="stat-value">{stats.total_avaliacoes || 0}</div>
+                  <div className="stat-value">{totalAvaliacoesKPI}</div>
                   <div className="stat-label">Avaliações Recebidas</div>
                 </div>
                 <div className="stat-card">
-                  <div className="stat-value">{stats.nota_media ? stats.nota_media.toFixed(1) : '0.0'}</div>
+                  <div className="stat-value">{notaMediaKPI.toFixed(1)}</div>
                   <div className="stat-label">Nota Média</div>
                 </div>
                 <div className="stat-card">
-                  <div className="stat-value">{agendamentos.length}</div>
+                  <div className="stat-value">{totalAulasKPI}</div>
                   <div className="stat-label">Total de Aulas</div>
                 </div>
                 <div className="stat-card">
-                  <div className="stat-value">{alunosUnicos.length}</div>
+                  <div className="stat-value">{alunosUnicosKPI}</div>
                   <div className="stat-label">Alunos Únicos</div>
                 </div>
               </div>
@@ -384,21 +478,47 @@ const DashboardProfessor = () => {
                       <th>Aula</th>
                       <th>Data/Hora</th>
                       <th>Status</th>
+                      <th>Ações</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {agendamentos.slice(0, 10).map((agendamento) => (
-                      <tr key={agendamento._id}>
-                        <td>{agendamento.aluno?.nome || 'N/A'}</td>
-                        <td>{agendamento.aula?.titulo || 'N/A'}</td>
-                        <td>{formatarData(agendamento.data_hora)}</td>
-                        <td>
-                          <span className={getStatusBadgeClass(agendamento.status)}>
-                            {agendamento.status || 'N/A'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                    {agendamentos.slice(0, 10).map((agendamento) => {
+                      const agendamentoId = agendamento._id || agendamento.id;
+                      const statusAtual = agendamento.status?.toLowerCase() || '';
+                      const estaAtualizando = atualizandoStatus[agendamentoId];
+                      const statusOptions = ['agendada', 'confirmada', 'concluida', 'cancelada', 'ausente'];
+                      
+                      return (
+                        <tr key={agendamento._id}>
+                          <td>{agendamento.aluno?.nome || 'N/A'}</td>
+                          <td>{agendamento.aula?.titulo || 'N/A'}</td>
+                          <td>{formatarData(agendamento.data_hora)}</td>
+                          <td>
+                            <span className={getStatusBadgeClass(agendamento.status)}>
+                              {agendamento.status || 'N/A'}
+                            </span>
+                          </td>
+                          <td>
+                            <select
+                              className="status-select"
+                              value={statusAtual}
+                              onChange={(e) => handleAlterarStatus(agendamento, e.target.value)}
+                              disabled={estaAtualizando}
+                              title="Alterar status do agendamento"
+                            >
+                              {statusOptions.map(opt => (
+                                <option key={opt} value={opt}>
+                                  {opt === 'concluida' ? 'Concluída' : opt.charAt(0).toUpperCase() + opt.slice(1)}
+                                </option>
+                              ))}
+                            </select>
+                            {estaAtualizando && (
+                              <span className="status-updating">Atualizando...</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
