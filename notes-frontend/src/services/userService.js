@@ -55,50 +55,48 @@ async function fetchAcrossBases(path, init = {}) {
   throw lastErr || new Error("Falha de rede");
 }
 
-/** Detecta o tipo de usuário (aluno ou professor) */
+/** Detecta o tipo de usuário (aluno ou professor).
+ *  Retorna: "professor" | "aluno" | null (quando não detectado)
+ *  Preferência: Auth.getTipo -> Auth.getUser().tipo -> localStorage.tipo
+ */
 function getUserType() {
-  // Tenta obter do authService primeiro
-  if (Auth.getTipo) {
-    const tipoAuth = Auth.getTipo();
-    if (tipoAuth) {
-      console.log("[getUserType] Tipo do authService:", tipoAuth);
-      return tipoAuth;
+  try {
+    // 1) authService (mais confiável)
+    if (Auth.getTipo) {
+      const t = Auth.getTipo();
+      if (t) return String(t).toLowerCase();
     }
+
+    // 2) objeto user salvo
+    const me = Auth.getUser?.() || {};
+    if (me?.tipo) return String(me.tipo).toLowerCase();
+
+    // 3) localStorage (fallback)
+    const ls = localStorage.getItem("tipo");
+    if (ls) return String(ls).toLowerCase();
+
+  } catch (e) {
+    console.debug("[getUserType] erro ao detectar tipo:", e);
   }
-  
-  // Tenta do objeto user
-  const me = Auth.getUser?.() || {};
-  if (me?.tipo) {
-    console.log("[getUserType] Tipo do user object:", me.tipo);
-    return me.tipo;
-  }
-  
-  // Tenta do localStorage (chave padrão)
-  const tipoStorage = localStorage.getItem("tipo");
-  if (tipoStorage) {
-    console.log("[getUserType] Tipo do localStorage:", tipoStorage);
-    return tipoStorage;
-  }
-  
-  // Fallback: assume aluno
-  console.log("[getUserType] Nenhum tipo encontrado, usando default: aluno");
-  return "aluno";
+
+  // retorna null se não for possível determinar
+  return null;
 }
 
 /** Normaliza string/array -> array de strings */
 function toArray(v) {
   if (v === undefined || v === null) return [];
-  if (Array.isArray(v)) return v.map(String).map(s=>s.trim()).filter(Boolean);
+  if (Array.isArray(v)) return v.map(String).map(s => s.trim()).filter(Boolean);
   if (typeof v === "string") {
-    // suporte para JSON array string também
     const s = v.trim();
     if (!s) return [];
+    // tenta JSON parse se for string JSON
     if (s.startsWith("[") || s.startsWith("{")) {
       try {
         const parsed = JSON.parse(s);
-        return Array.isArray(parsed) ? parsed.map(String).map(x=>x.trim()).filter(Boolean) : [];
+        return Array.isArray(parsed) ? parsed.map(String).map(x => x.trim()).filter(Boolean) : [];
       } catch (e) {
-        // se não é JSON, cai para split por vírgula
+        // se não for JSON válido, cai para split por vírgula
       }
     }
     return s.split(",").map(x => x.trim()).filter(Boolean);
@@ -106,11 +104,7 @@ function toArray(v) {
   return [];
 }
 
-/** Tenta interpretar valor como array de objetos.
- * - Se já for array, retorna como está.
- * - Se for string JSON, faz JSON.parse.
- * - Caso contrário, retorna undefined (não sobrescrever).
- */
+/** Tenta interpretar valor como array de objetos ou undefined */
 function toArrayOfObjectsOrUndefined(v) {
   if (v === undefined || v === null) return undefined;
   if (Array.isArray(v)) return v;
@@ -147,73 +141,97 @@ function toObjectOrUndefined(v) {
   return undefined;
 }
 
-/** Perfil atual (tenta /me; fallback para /<id>; tenta todas as bases) */
+/** Perfil atual (tenta /professores/me e /alunos/me).
+ *  Tenta ambos; se um responder OK, retorna; se 403 com mensagem "apenas para" tenta o outro.
+ *  Se 404 tenta com ID salvo localmente.
+ */
 export async function getProfile() {
-  // Tenta ambos os endpoints em paralelo ou sequencialmente para detectar o tipo correto
-  const endpoints = ["/professores", "/alunos"];
-  
-  for (const endpoint of endpoints) {
-    let r = await fetchAcrossBases(`${endpoint}/me`, { headers: authHeaders() });
-    if (r.ok) {
-      const user = await r.json();
-      // Atualiza o tipo baseado no endpoint que funcionou
-      const newTipo = endpoint === "/professores" ? "professor" : "aluno";
-      localStorage.setItem("tipo", newTipo);
-      if (Auth.setUser && user) Auth.setUser({ ...user, tipo: newTipo });
-      return user;
-    }
-    
-    // Se deu 403 mas não é o erro de tipo errado, continua
-    if (r.status === 403) {
-      const errorData = await r.json().catch(() => ({}));
-      if (errorData.msg && errorData.msg.includes("apenas para")) {
-        // Tipo errado, tenta próximo endpoint
-        continue;
+  // ordem: tentamos professores primeiro (porque perfil professor costuma ter mais campos),
+  // mas se houver indicação no localStorage/Auth, preferimos essa ordem.
+  const preferido = getUserType(); // "professor" | "aluno" | null
+  const order = preferido === "professor" ? ["/professores", "/alunos"] : preferido === "aluno" ? ["/alunos", "/professores"] : ["/professores", "/alunos"];
+
+  let lastErr = null;
+  for (const endpoint of order) {
+    try {
+      let r = await fetchAcrossBases(`${endpoint}/me`, { headers: authHeaders() });
+      if (r.ok) {
+        const user = await r.json();
+        const tipo = endpoint === "/professores" ? "professor" : "aluno";
+        localStorage.setItem("tipo", tipo);
+        if (Auth.setUser && user) Auth.setUser({ ...user, tipo });
+        return user;
       }
-    }
-    
-    // Se deu 404, tenta com ID
-    if (r.status === 404) {
-      const id = getLocalUserId();
-      if (id && typeof id === 'string' && id.length === 24 && /^[0-9a-fA-F]+$/.test(id)) {
-        r = await fetchAcrossBases(`${endpoint}/${id}`, { headers: authHeaders() });
-        if (r.ok) {
-          const user = await r.json();
-          const newTipo = endpoint === "/professores" ? "professor" : "aluno";
-          localStorage.setItem("tipo", newTipo);
-          if (Auth.setUser && user) Auth.setUser({ ...user, tipo: newTipo });
-          return user;
+
+      // 403 pode ser "tipo errado" -> tentar próximo
+      if (r.status === 403) {
+        lastErr = r;
+        try {
+          const body = await r.json().catch(() => ({}));
+          if (body.msg && body.msg.includes("apenas para")) {
+            console.debug(`[getProfile] ${endpoint}/me retornou 403 tipo errado, tentando próximo endpoint`);
+            continue;
+          } else {
+            // outro tipo de 403 -> lançar
+            throw new Error(body.msg || "Acesso negado");
+          }
+        } catch (e) {
+          // se parse falhar, continua para próximo endpoint
+          continue;
         }
       }
+
+      // 404: tentar com ID local
+      if (r.status === 404) {
+        const id = getLocalUserId();
+        if (id && typeof id === "string" && id.length === 24 && /^[0-9a-fA-F]+$/.test(id)) {
+          r = await fetchAcrossBases(`${endpoint}/${id}`, { headers: authHeaders() });
+          if (r.ok) {
+            const user = await r.json();
+            const tipo = endpoint === "/professores" ? "professor" : "aluno";
+            localStorage.setItem("tipo", tipo);
+            if (Auth.setUser && user) Auth.setUser({ ...user, tipo });
+            return user;
+          }
+        }
+      }
+
+      lastErr = r;
+    } catch (e) {
+      lastErr = e;
     }
   }
 
-  // Se chegou aqui, nenhum endpoint funcionou
-  throw new Error("Não foi possível carregar o perfil. Verifique se você está logado.");
+  if (lastErr instanceof Response) {
+    try {
+      const body = await lastErr.json().catch(() => null);
+      const msg = (body && (body.error || body.msg)) || `HTTP ${lastErr.status}`;
+      throw new Error(msg);
+    } catch (e) {
+      throw new Error("Não foi possível carregar o perfil (resposta inválida).");
+    }
+  }
+  throw lastErr || new Error("Não foi possível carregar o perfil. Verifique se você está logado.");
 }
 
-/** Atualiza perfil atual (usa /me; fallback para /<id>; tenta todas as bases)
- *  O patch recebido pode ter strings (vírgula-separated) ou arrays/objects.
- *  Aqui normalizamos os campos para cada tipo antes de enviar.
+/** Atualiza perfil atual (usa /me; fallback para /<id>; tenta ambas as bases).
+ *  Normaliza campos que podem vir como string (vírgula-separated) ou JSON.
  */
 export async function updateProfile(patch) {
-  // Prepara helpers
+  // Prepara
   const tipoDetectado = getUserType();
   const idLocal = getLocalUserId();
 
-  // Normalizações comuns
-  const common = {
-    ...patch,
-  };
+  // Campos comuns: fazemos shallow copy do patch
+  const common = { ...patch };
 
-  // Constrói body para aluno
+  // ---- Monta bodyAluno ----
   const bodyAluno = { ...common };
-  // aluno: quer_aprender, idiomas, modalidades, valor_hora (disposto a pagar)
   if (patch.quer_aprender !== undefined) bodyAluno.quer_aprender = toArray(patch.quer_aprender);
   if (patch.idiomas !== undefined) bodyAluno.idiomas = toArray(patch.idiomas);
   if (patch.modalidades !== undefined) bodyAluno.modalidades = toArray(patch.modalidades);
   if (patch.valor_hora !== undefined) bodyAluno.valor_hora = (patch.valor_hora === null ? null : Number(patch.valor_hora));
-  // remover campos que são exclusivos de professor
+  // Remover campos que são típicos de professor para evitar sobrescrita indevida
   delete bodyAluno.quer_ensinar;
   delete bodyAluno.especializacoes;
   delete bodyAluno.experiencias;
@@ -222,14 +240,12 @@ export async function updateProfile(patch) {
   delete bodyAluno.projetos;
   delete bodyAluno.disponibilidade;
 
-  // Constrói body para professor
+  // ---- Monta bodyProfessor ----
   const bodyProfessor = { ...common };
-  // professor: especializacoes, quer_ensinar, idiomas?, modalidades, valor_hora (cobrado), experiencias/formacao/etc.
   if (patch.especializacoes !== undefined) bodyProfessor.especializacoes = toArray(patch.especializacoes);
   if (patch.quer_ensinar !== undefined) bodyProfessor.quer_ensinar = toArray(patch.quer_ensinar);
   if (patch.modalidades !== undefined) bodyProfessor.modalidades = toArray(patch.modalidades);
   if (patch.valor_hora !== undefined) bodyProfessor.valor_hora = (patch.valor_hora === null ? null : Number(patch.valor_hora));
-  // campos complexos: se vierem como array ou JSON string, enviamos; caso contrário, não sobrescrevemos
   const experienciasArr = toArrayOfObjectsOrUndefined(patch.experiencias);
   if (experienciasArr !== undefined) bodyProfessor.experiencias = experienciasArr;
   const formacaoArr = toArrayOfObjectsOrUndefined(patch.formacao);
@@ -240,74 +256,78 @@ export async function updateProfile(patch) {
   if (projetosArr !== undefined) bodyProfessor.projetos = projetosArr;
   const dispObj = toObjectOrUndefined(patch.disponibilidade);
   if (dispObj !== undefined) bodyProfessor.disponibilidade = dispObj;
-
-  // Remover campos exclusivos de aluno do bodyProfessor
+  // Remover campos de aluno
   delete bodyProfessor.quer_aprender;
 
-  // Nunca envie o campo email no patch (somos consistentes com backend)
+  // Nunca envie email no patch
   delete bodyAluno.email;
   delete bodyProfessor.email;
 
-  // Prepara ordem de tentativa (tenta tipoDetectado primeiro)
-  const endpoints = [
+  // Ordem de tentativa baseada no tipo detectado (se detectar professor, tenta professores primeiro)
+  let endpoints = [
     { path: "/professores", body: bodyProfessor, tipo: "professor" },
     { path: "/alunos", body: bodyAluno, tipo: "aluno" }
   ];
-
-  if (typeof tipoDetectado === "string" && (tipoDetectado.toLowerCase() === "professor" || tipoDetectado.toLowerCase() === "prof")) {
-    endpoints.reverse(); // professor primeiro
+  if (tipoDetectado && (tipoDetectado.toLowerCase() === "professor" || tipoDetectado.toLowerCase() === "prof")) {
+    // já está professor primeiro — se quiser inverter quando tipoDetectado === 'aluno' você pode
+    // aqui mantemos professores primeiro quando detectado professor
+  } else if (tipoDetectado && tipoDetectado.toLowerCase() === "aluno") {
+    endpoints = endpoints.reverse();
   }
 
   let lastResponse = null;
 
   for (const { path, body: bodyToSend, tipo } of endpoints) {
-    // método: PUT /<endpoint>/me
-    let r = await fetchAcrossBases(`${path}/me`, {
-      method: "PUT",
-      headers: authHeaders(),
-      body: JSON.stringify(bodyToSend),
-    });
-
-    lastResponse = r;
-
-    if (r.ok) {
-      const user = await r.json();
-      // Atualiza o tipo baseado no endpoint que funcionou
-      localStorage.setItem("tipo", tipo);
-      if (Auth.setUser && user) Auth.setUser({ ...user, tipo });
-      return user;
-    }
-
-    // Se deu 403 com mensagem de tipo errado, tenta próximo
-    if (r.status === 403) {
-      const errorData = await r.json().catch(() => ({}));
-      if (errorData.msg && errorData.msg.includes("apenas para")) {
-        // Tipo errado, continua para próximo endpoint
-        continue;
-      }
-      // Outro tipo de 403, lança erro
-      throw new Error(errorData.msg || "Acesso negado.");
-    }
-
-    // Se deu 404, tenta com ID como fallback
-    if (r.status === 404 && idLocal && typeof idLocal === 'string' && idLocal.length === 24 && /^[0-9a-fA-F]+$/.test(idLocal)) {
-      r = await fetchAcrossBases(`${path}/${idLocal}`, {
+    try {
+      let r = await fetchAcrossBases(`${path}/me`, {
         method: "PUT",
         headers: authHeaders(),
         body: JSON.stringify(bodyToSend),
       });
+
       lastResponse = r;
+
       if (r.ok) {
         const user = await r.json();
         localStorage.setItem("tipo", tipo);
         if (Auth.setUser && user) Auth.setUser({ ...user, tipo });
         return user;
       }
-    }
 
-    // Se não foi 403 nem 404, para aqui e lança erro
-    if (r.status !== 403 && r.status !== 404) {
-      break;
+      // Se deu 403 com mensagem de tipo errado, tenta próximo endpoint
+      if (r.status === 403) {
+        const errorData = await r.json().catch(() => ({}));
+        if (errorData.msg && errorData.msg.includes("apenas para")) {
+          // Tipo errado, continua
+          continue;
+        }
+        // outro 403: lançar
+        throw new Error(errorData.msg || "Acesso negado.");
+      }
+
+      // Se deu 404, tenta com ID como fallback
+      if (r.status === 404 && idLocal && typeof idLocal === "string" && idLocal.length === 24 && /^[0-9a-fA-F]+$/.test(idLocal)) {
+        r = await fetchAcrossBases(`${path}/${idLocal}`, {
+          method: "PUT",
+          headers: authHeaders(),
+          body: JSON.stringify(bodyToSend),
+        });
+        lastResponse = r;
+        if (r.ok) {
+          const user = await r.json();
+          localStorage.setItem("tipo", tipo);
+          if (Auth.setUser && user) Auth.setUser({ ...user, tipo });
+          return user;
+        }
+      }
+
+      // Se não foi 403 nem 404, sai do loop e trata erro
+      if (r.status !== 403 && r.status !== 404) {
+        break;
+      }
+    } catch (e) {
+      lastResponse = e;
+      // tenta próximo endpoint
     }
   }
 
@@ -315,12 +335,12 @@ export async function updateProfile(patch) {
   let msg = "Falha ao salvar perfil";
   try {
     if (lastResponse && typeof lastResponse.json === "function") {
-      const errBody = await lastResponse.json().catch(()=>null);
+      const errBody = await lastResponse.json().catch(() => null);
       if (errBody) msg = errBody.error || errBody.msg || JSON.stringify(errBody);
     } else if (lastResponse) {
       msg = String(lastResponse);
     }
-  } catch (e) {}
+  } catch (e) { /* ignore */ }
 
   throw new Error(msg);
 }
@@ -332,7 +352,9 @@ export async function getAlunoBySlug(slug) {
   return r.json();
 }
 
-/** Upload de avatar (mantém endpoint existente) */
+/** Upload de avatar (mantém endpoint existente)
+ *  Envia para diferentes caminhos tentando compatibilidade com backends.
+ */
 export async function uploadAvatar(file) {
   const me = Auth.getUser?.() || {};
   const id = me?._id || me?.id;
