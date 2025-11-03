@@ -8,11 +8,10 @@ import HomeProfessor from "../home-professor/home-professor";
 import "./home.css";
 import CardDisciplinas from "../../components/card-disciplinas";
 import heroImg from "../../assets/garota_home.png"; 
-import { useNavigate } from "react-router-dom"
 
 export default function Home() {
   const [q, setQ] = React.useState("");
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
   const isAuthenticated = isLoggedIn();
   
