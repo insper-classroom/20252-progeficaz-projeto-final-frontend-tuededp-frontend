@@ -31,18 +31,21 @@ export default function PerfilAluno() {
       links_site: meLocal?.links?.site || "",
     };
 
-    // Campos específicos de alunos
+    // Campos específicos de alunos (aparecem apenas para alunos)
     if (!isProfessor) {
       baseForm.bio = meLocal?.bio || "";
-      baseForm.especializacoes = (meLocal?.especializacoes || []).join(", ");
-      baseForm.quer_ensinar = (meLocal?.quer_ensinar || []).join(", ");
       baseForm.quer_aprender = (meLocal?.quer_aprender || []).join(", ");
       baseForm.idiomas = (meLocal?.idiomas || []).join(", ");
+      // NOTA: removi especializacoes e quer_ensinar daqui (só pra professor)
     }
 
-    // Campos específicos de professores
+    // Campos específicos de professores (aparecem apenas para professores)
     if (isProfessor) {
       baseForm.historico_academico_profissional = meLocal?.historico_academico_profissional || "";
+      baseForm.especializacoes = (meLocal?.especializacoes || []).join(", ");
+      baseForm.quer_ensinar = (meLocal?.quer_ensinar || []).join(", ");
+      // campos mais complexos (experiencias, formacao, etc.) não estão sendo exibidos aqui
+      // para evitar enviar formatos errados ao backend — podemos adicionar UI específica depois.
     }
 
     return baseForm;
@@ -76,8 +79,6 @@ export default function PerfilAluno() {
         // Campos específicos de alunos
         if (!isProfessor) {
           updatedForm.bio = me?.bio || "";
-          updatedForm.especializacoes = (me?.especializacoes || []).join(", ");
-          updatedForm.quer_ensinar = (me?.quer_ensinar || []).join(", ");
           updatedForm.quer_aprender = (me?.quer_aprender || []).join(", ");
           updatedForm.idiomas = (me?.idiomas || []).join(", ");
         }
@@ -85,6 +86,8 @@ export default function PerfilAluno() {
         // Campos específicos de professores
         if (isProfessor) {
           updatedForm.historico_academico_profissional = me?.historico_academico_profissional || "";
+          updatedForm.especializacoes = (me?.especializacoes || []).join(", ");
+          updatedForm.quer_ensinar = (me?.quer_ensinar || []).join(", ");
         }
 
         setForm(prev => ({ ...prev, ...updatedForm }));
@@ -100,7 +103,8 @@ export default function PerfilAluno() {
       }
     })();
     return () => { alive = false; };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // isProfessor é estático durante a sessão; evitei dependência para não re-inicializar
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -124,26 +128,32 @@ export default function PerfilAluno() {
         },
       };
 
-      // Campos específicos de alunos
+      // Campos específicos de alunos (SOMENTE para alunos)
       if (!isProfessor) {
         patch.bio = form.bio;
-        patch.especializacoes = form.especializacoes;
-        patch.quer_ensinar = form.quer_ensinar;
-        patch.quer_aprender = form.quer_aprender;
+        patch.quer_aprender = form.quer_aprender; // enviado como string (backend fará normalize_list_maybe)
         patch.idiomas = form.idiomas;
       }
 
-      // Campos específicos de professores
+      // Campos específicos de professores (SOMENTE para professores)
       if (isProfessor) {
         patch.historico_academico_profissional = form.historico_academico_profissional;
+        patch.especializacoes = form.especializacoes;
+        patch.quer_ensinar = form.quer_ensinar;
       }
 
-      // Campos comuns
-      if (form.modalidades) {
+      // Campos comuns (ambos)
+      if (form.modalidades !== undefined) {
         patch.modalidades = form.modalidades;
       }
-      if (form.valor_hora) {
-        patch.valor_hora = form.valor_hora ? Number(form.valor_hora) : null;
+      // valor_hora: para aluno é "disposto a pagar", para professor "cobrado" — ambos usam o mesmo campo name no backend
+      if (form.valor_hora !== undefined && form.valor_hora !== "") {
+        // converter para número se possível
+        const n = Number(form.valor_hora);
+        patch.valor_hora = Number.isFinite(n) ? n : null;
+      } else {
+        // se deixado vazio, envie null para limpar no backend caso deseje
+        patch.valor_hora = null;
       }
 
       const updated = await updateProfile(patch);
@@ -278,10 +288,22 @@ export default function PerfilAluno() {
                   </div>
 
                   {isProfessor ? (
-                    <div className="field">
-                      <label htmlFor="historico_academico_profissional">Histórico Acadêmico e Profissional</label>
-                      <textarea id="historico_academico_profissional" name="historico_academico_profissional" value={form.historico_academico_profissional} onChange={handleChange} rows={4} placeholder="Formação acadêmica, experiência profissional, conquistas..." />
-                    </div>
+                    <>
+                      <div className="field">
+                        <label htmlFor="historico_academico_profissional">Histórico Acadêmico e Profissional</label>
+                        <textarea id="historico_academico_profissional" name="historico_academico_profissional" value={form.historico_academico_profissional} onChange={handleChange} rows={4} placeholder="Formação acadêmica, experiência profissional, conquistas..." />
+                      </div>
+
+                      <div className="field">
+                        <label htmlFor="especializacoes">Especializações (separe por vírgula)</label>
+                        <input id="especializacoes" name="especializacoes" value={form.especializacoes} onChange={handleChange} placeholder="Cálculo I, Machine Learning" />
+                      </div>
+
+                      <div className="field">
+                        <label htmlFor="quer_ensinar">Quero ensinar (vírgulas)</label>
+                        <input id="quer_ensinar" name="quer_ensinar" value={form.quer_ensinar || ""} onChange={handleChange} placeholder="Cálculo, Estatística" />
+                      </div>
+                    </>
                   ) : (
                     <>
                       <div className="field">
@@ -291,20 +313,10 @@ export default function PerfilAluno() {
 
                       <div className="grid-2">
                         <div className="field">
-                          <label htmlFor="especializacoes">Especializações (separe por vírgula)</label>
-                          <input id="especializacoes" name="especializacoes" value={form.especializacoes} onChange={handleChange} placeholder="Cálculo I, Python, React" />
-                        </div>
-                        <div className="field">
                           <label htmlFor="idiomas">Idiomas (separe por vírgula)</label>
                           <input id="idiomas" name="idiomas" value={form.idiomas} onChange={handleChange} placeholder="PT-BR, EN-B2" />
                         </div>
-                      </div>
 
-                      <div className="grid-2">
-                        <div className="field">
-                          <label htmlFor="quer_ensinar">Quero ensinar (vírgulas)</label>
-                          <input id="quer_ensinar" name="quer_ensinar" value={form.quer_ensinar} onChange={handleChange} placeholder="Cálculo I, Python iniciante" />
-                        </div>
                         <div className="field">
                           <label htmlFor="quer_aprender">Quero aprender (vírgulas)</label>
                           <input id="quer_aprender" name="quer_aprender" value={form.quer_aprender} onChange={handleChange} placeholder="Econometria, Trading algorítmico" />
@@ -313,31 +325,17 @@ export default function PerfilAluno() {
                     </>
                   )}
 
-                  {!isProfessor && (
-                    <div className="grid-2">
-                      <div className="field">
-                        <label htmlFor="modalidades">Modalidades (vírgulas)</label>
-                        <input id="modalidades" name="modalidades" value={form.modalidades} onChange={handleChange} placeholder="Online, Presencial" />
-                      </div>
-                      <div className="field">
-                        <label htmlFor="valor_hora">Valor/hora (R$)</label>
-                        <input id="valor_hora" name="valor_hora" type="number" step="1" min="0" value={form.valor_hora} onChange={handleChange} placeholder="60" />
-                      </div>
+                  {/* Modalidades e valor/hora (tanto para aluno quanto professor) */}
+                  <div className="grid-2">
+                    <div className="field">
+                      <label htmlFor="modalidades">{isProfessor ? "Modalidades de Ensino (vírgulas)" : "Modalidades (vírgulas)"}</label>
+                      <input id="modalidades" name="modalidades" value={form.modalidades} onChange={handleChange} placeholder="Online, Presencial" />
                     </div>
-                  )}
-
-                  {isProfessor && (
-                    <div className="grid-2">
-                      <div className="field">
-                        <label htmlFor="modalidades">Modalidades de Ensino (vírgulas)</label>
-                        <input id="modalidades" name="modalidades" value={form.modalidades} onChange={handleChange} placeholder="Online, Presencial" />
-                      </div>
-                      <div className="field">
-                        <label htmlFor="valor_hora">Valor/hora (R$)</label>
-                        <input id="valor_hora" name="valor_hora" type="number" step="1" min="0" value={form.valor_hora} onChange={handleChange} placeholder="60" />
-                      </div>
+                    <div className="field">
+                      <label htmlFor="valor_hora">Valor/hora (R$)</label>
+                      <input id="valor_hora" name="valor_hora" type="number" step="1" min="0" value={form.valor_hora} onChange={handleChange} placeholder="60" />
                     </div>
-                  )}
+                  </div>
 
                   <div className="grid-3">
                     <div className="field">

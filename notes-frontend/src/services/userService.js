@@ -80,9 +80,71 @@ function getUserType() {
     return tipoStorage;
   }
   
-  // Fallback: tenta detectar pelo erro de API ou assume aluno
+  // Fallback: assume aluno
   console.log("[getUserType] Nenhum tipo encontrado, usando default: aluno");
   return "aluno";
+}
+
+/** Normaliza string/array -> array de strings */
+function toArray(v) {
+  if (v === undefined || v === null) return [];
+  if (Array.isArray(v)) return v.map(String).map(s=>s.trim()).filter(Boolean);
+  if (typeof v === "string") {
+    // suporte para JSON array string também
+    const s = v.trim();
+    if (!s) return [];
+    if (s.startsWith("[") || s.startsWith("{")) {
+      try {
+        const parsed = JSON.parse(s);
+        return Array.isArray(parsed) ? parsed.map(String).map(x=>x.trim()).filter(Boolean) : [];
+      } catch (e) {
+        // se não é JSON, cai para split por vírgula
+      }
+    }
+    return s.split(",").map(x => x.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+/** Tenta interpretar valor como array de objetos.
+ * - Se já for array, retorna como está.
+ * - Se for string JSON, faz JSON.parse.
+ * - Caso contrário, retorna undefined (não sobrescrever).
+ */
+function toArrayOfObjectsOrUndefined(v) {
+  if (v === undefined || v === null) return undefined;
+  if (Array.isArray(v)) return v;
+  if (typeof v === "string") {
+    const s = v.trim();
+    if (!s) return undefined;
+    try {
+      const parsed = JSON.parse(s);
+      if (Array.isArray(parsed)) return parsed;
+      return undefined;
+    } catch (e) {
+      // não é JSON -> não sobrescrever
+      return undefined;
+    }
+  }
+  return undefined;
+}
+
+/** Tenta interpretar disponibilidade (objeto) */
+function toObjectOrUndefined(v) {
+  if (v === undefined || v === null) return undefined;
+  if (typeof v === "object") return v;
+  if (typeof v === "string") {
+    const s = v.trim();
+    if (!s) return undefined;
+    try {
+      const parsed = JSON.parse(s);
+      if (parsed && typeof parsed === "object") return parsed;
+      return undefined;
+    } catch (e) {
+      return undefined;
+    }
+  }
+  return undefined;
 }
 
 /** Perfil atual (tenta /me; fallback para /<id>; tenta todas as bases) */
@@ -130,60 +192,83 @@ export async function getProfile() {
   throw new Error("Não foi possível carregar o perfil. Verifique se você está logado.");
 }
 
-/** Atualiza perfil atual (usa /me; fallback para /<id>; tenta todas as bases) */
+/** Atualiza perfil atual (usa /me; fallback para /<id>; tenta todas as bases)
+ *  O patch recebido pode ter strings (vírgula-separated) ou arrays/objects.
+ *  Aqui normalizamos os campos para cada tipo antes de enviar.
+ */
 export async function updateProfile(patch) {
-  const toArray = (v) =>
-    Array.isArray(v) ? v :
-    typeof v === "string" ? v.split(",").map((s) => s.trim()).filter(Boolean) :
-    (v ?? []);
+  // Prepara helpers
+  const tipoDetectado = getUserType();
+  const idLocal = getLocalUserId();
 
-  // Prepara o body baseado no tipo detectado, mas vamos tentar ambos se necessário
-  let tipoDetectado = getUserType();
-  const body = {
+  // Normalizações comuns
+  const common = {
     ...patch,
   };
-  
-  // Campos específicos de alunos (professores não têm esses campos)
-  // Mas vamos preparar ambos os casos
-  const bodyAluno = {
-    ...body,
-    especializacoes: toArray(patch.especializacoes),
-    quer_ensinar: toArray(patch.quer_ensinar),
-    quer_aprender: toArray(patch.quer_aprender),
-    idiomas: toArray(patch.idiomas),
-    modalidades: toArray(patch.modalidades),
-  };
-  
-  const bodyProfessor = {
-    ...body,
-    modalidades: toArray(patch.modalidades),
-    // Remove campos que não existem para professores
-  };
-  delete bodyProfessor.especializacoes;
-  delete bodyProfessor.quer_ensinar;
+
+  // Constrói body para aluno
+  const bodyAluno = { ...common };
+  // aluno: quer_aprender, idiomas, modalidades, valor_hora (disposto a pagar)
+  if (patch.quer_aprender !== undefined) bodyAluno.quer_aprender = toArray(patch.quer_aprender);
+  if (patch.idiomas !== undefined) bodyAluno.idiomas = toArray(patch.idiomas);
+  if (patch.modalidades !== undefined) bodyAluno.modalidades = toArray(patch.modalidades);
+  if (patch.valor_hora !== undefined) bodyAluno.valor_hora = (patch.valor_hora === null ? null : Number(patch.valor_hora));
+  // remover campos que são exclusivos de professor
+  delete bodyAluno.quer_ensinar;
+  delete bodyAluno.especializacoes;
+  delete bodyAluno.experiencias;
+  delete bodyAluno.formacao;
+  delete bodyAluno.certificacoes;
+  delete bodyAluno.projetos;
+  delete bodyAluno.disponibilidade;
+
+  // Constrói body para professor
+  const bodyProfessor = { ...common };
+  // professor: especializacoes, quer_ensinar, idiomas?, modalidades, valor_hora (cobrado), experiencias/formacao/etc.
+  if (patch.especializacoes !== undefined) bodyProfessor.especializacoes = toArray(patch.especializacoes);
+  if (patch.quer_ensinar !== undefined) bodyProfessor.quer_ensinar = toArray(patch.quer_ensinar);
+  if (patch.modalidades !== undefined) bodyProfessor.modalidades = toArray(patch.modalidades);
+  if (patch.valor_hora !== undefined) bodyProfessor.valor_hora = (patch.valor_hora === null ? null : Number(patch.valor_hora));
+  // campos complexos: se vierem como array ou JSON string, enviamos; caso contrário, não sobrescrevemos
+  const experienciasArr = toArrayOfObjectsOrUndefined(patch.experiencias);
+  if (experienciasArr !== undefined) bodyProfessor.experiencias = experienciasArr;
+  const formacaoArr = toArrayOfObjectsOrUndefined(patch.formacao);
+  if (formacaoArr !== undefined) bodyProfessor.formacao = formacaoArr;
+  const certsArr = toArrayOfObjectsOrUndefined(patch.certificacoes);
+  if (certsArr !== undefined) bodyProfessor.certificacoes = certsArr;
+  const projetosArr = toArrayOfObjectsOrUndefined(patch.projetos);
+  if (projetosArr !== undefined) bodyProfessor.projetos = projetosArr;
+  const dispObj = toObjectOrUndefined(patch.disponibilidade);
+  if (dispObj !== undefined) bodyProfessor.disponibilidade = dispObj;
+
+  // Remover campos exclusivos de aluno do bodyProfessor
   delete bodyProfessor.quer_aprender;
-  delete bodyProfessor.idiomas;
-  
+
+  // Nunca envie o campo email no patch (somos consistentes com backend)
   delete bodyAluno.email;
   delete bodyProfessor.email;
-  
-  // Tenta ambos os endpoints
+
+  // Prepara ordem de tentativa (tenta tipoDetectado primeiro)
   const endpoints = [
     { path: "/professores", body: bodyProfessor, tipo: "professor" },
     { path: "/alunos", body: bodyAluno, tipo: "aluno" }
   ];
-  
-  // Se o tipo foi detectado, tenta esse primeiro
-  if (tipoDetectado === "professor" || tipoDetectado === "prof") {
-    endpoints.reverse(); // Professores primeiro
+
+  if (typeof tipoDetectado === "string" && (tipoDetectado.toLowerCase() === "professor" || tipoDetectado.toLowerCase() === "prof")) {
+    endpoints.reverse(); // professor primeiro
   }
 
+  let lastResponse = null;
+
   for (const { path, body: bodyToSend, tipo } of endpoints) {
+    // método: PUT /<endpoint>/me
     let r = await fetchAcrossBases(`${path}/me`, {
       method: "PUT",
       headers: authHeaders(),
       body: JSON.stringify(bodyToSend),
     });
+
+    lastResponse = r;
 
     if (r.ok) {
       const user = await r.json();
@@ -205,20 +290,18 @@ export async function updateProfile(patch) {
     }
 
     // Se deu 404, tenta com ID como fallback
-    if (r.status === 404) {
-      const id = getLocalUserId();
-      if (id && typeof id === 'string' && id.length === 24 && /^[0-9a-fA-F]+$/.test(id)) {
-        r = await fetchAcrossBases(`${path}/${id}`, {
-          method: "PUT",
-          headers: authHeaders(),
-          body: JSON.stringify(bodyToSend),
-        });
-        if (r.ok) {
-          const user = await r.json();
-          localStorage.setItem("tipo", tipo);
-          if (Auth.setUser && user) Auth.setUser({ ...user, tipo });
-          return user;
-        }
+    if (r.status === 404 && idLocal && typeof idLocal === 'string' && idLocal.length === 24 && /^[0-9a-fA-F]+$/.test(idLocal)) {
+      r = await fetchAcrossBases(`${path}/${idLocal}`, {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify(bodyToSend),
+      });
+      lastResponse = r;
+      if (r.ok) {
+        const user = await r.json();
+        localStorage.setItem("tipo", tipo);
+        if (Auth.setUser && user) Auth.setUser({ ...user, tipo });
+        return user;
       }
     }
 
@@ -231,13 +314,14 @@ export async function updateProfile(patch) {
   // Se chegou aqui, nenhum endpoint funcionou
   let msg = "Falha ao salvar perfil";
   try {
-    const errorData = await r.json();
-    msg = errorData.error || errorData.msg || msg;
-  } catch {
-    try { 
-      msg = await r.text(); 
-    } catch {}
-  }
+    if (lastResponse && typeof lastResponse.json === "function") {
+      const errBody = await lastResponse.json().catch(()=>null);
+      if (errBody) msg = errBody.error || errBody.msg || JSON.stringify(errBody);
+    } else if (lastResponse) {
+      msg = String(lastResponse);
+    }
+  } catch (e) {}
+
   throw new Error(msg);
 }
 
@@ -314,6 +398,7 @@ export async function uploadAvatar(file) {
     lastErr?.message || "Falha no upload (verifique proxy/CORS e endpoint)."
   );
 }
+
 /** Troca de senha (se o seu back expõe esse endpoint) */
 export async function changePassword({ senhaAtual, novaSenha }) {
   const r = await fetchAcrossBases(`/auth/change-password`, {
