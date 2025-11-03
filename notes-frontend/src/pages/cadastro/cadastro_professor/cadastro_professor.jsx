@@ -1,41 +1,175 @@
 import React, { useState } from 'react';
 import HeaderDeslogado from '../../../components/header-deslogado';
 import Footer from '../../../components/footer';
-import { useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { cadastrarProfessor, formatarCPF, formatarTelefone } from '../../../services/apiService';
 import './cadastro_professor.css';
 
+const emptyExperience = () => ({ cargo: '', empresa: '', inicio: '', fim: '', descricao: '', link: '' });
+const emptyFormacao = () => ({ instituicao: '', curso: '', inicio: '', fim: '', descricao: '' });
+const emptyCert = () => ({ titulo: '', org: '', ano: '', link: '' });
+const emptyProjeto = () => ({ titulo: '', resumo: '', link: '' });
+
 const CadastroProfessor = () => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
     telefone: '',
     cpf: '',
-    area: '',  
+    area: '',
     data_nascimento: '',
     historico_academico_profissional: '',
     endereco: '',
-    senha: ''
+    senha: '',
+
+    // extras (strings for comma-list inputs)
+    especializacoes: '',
+    quer_ensinar: '',
+    modalidades: '',
+    idiomas: '',
+    valor_hora: '',
+    disponibilidade_timezone: '',
+    disponibilidade_dias: '',      // csv
+    disponibilidade_horarios: '', // csv
+
+    // complex lists
+    experiencias: [ emptyExperience() ],
+    formacao: [ emptyFormacao() ],
+    certificacoes: [ emptyCert() ],
+    projetos: [ emptyProjeto() ],
+
+    // links
+    links_linkedin: '',
+    links_github: '',
+    links_site: ''
   });
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
+  // style helpers: aumenta espaço entre labels/inputs nos blocos dinâmicos
+  const dynamicBlockStyle = { display: 'grid', gap: 12, marginBottom: 18, padding: '8px 0' };
+  const smallInputStyle = { width: '100%' };
+
+  // máscara de moeda simples (entrada): permite apenas dígitos e um ponto, até 2 casas
+  function maskCurrencyInput(value) {
+    if (value == null) return '';
+    let v = String(value).replace(",", ".");
+    v = v.replace(/[^\d.]/g, "");
+    const parts = v.split(".");
+    if (parts.length > 1) {
+      v = parts[0] + "." + parts.slice(1).join("").slice(0,2);
+    }
+    return v;
+  }
+
+  function onlyDigits(value) {
+    return String(value || "").replace(/\D+/g, "");
+  }
+
+  function setField(name, value) {
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
+  }
+
+  // Função única e consolidada de máscaras para todos os campos
+  function applyMaskForField(name, value) {
+    if (!name) return value ?? "";
+    const n = String(name).toLowerCase();
+    let v = value == null ? "" : String(value);
+
+    // Telefones -> usa helper externo se disponível
+    if (n.includes("telefone")) {
+      return typeof formatarTelefone === "function" ? formatarTelefone(v) : v.replace(/[^\d()+\- ]/g, "");
+    }
+
+    // CPF -> usa helper externo se disponível
+    if (n.includes("cpf")) {
+      return typeof formatarCPF === "function" ? formatarCPF(v) : v.replace(/\D/g, "").slice(0,11);
+    }
+
+    // Valor/hora -> moeda simplificada
+    if (n === "valor_hora" || n.includes("valor")) {
+      return maskCurrencyInput(v);
+    }
+
+    // Ano (somente 4 dígitos)
+    if (n === "ano") {
+      return onlyDigits(v).slice(0,4);
+    }
+
+    // Disponibilidade: dias/horarios - aceita apenas letras, números, dois-pontos, hífen e vírgula
+    if (n.includes("disponibilidade") && (n.includes("dias") || n.includes("horarios"))) {
+      return v.replace(/[^0-9a-zA-Záàâãéèêíïóôõúüç:\-, \/]/g, "");
+    }
+
+    // Links (URLs) — se o usuário começar sem http, prefixa https:// para ajudar
+    if (n.includes("link") && v.trim()) {
+      const t = v.trim();
+      if (!/^https?:\/\//i.test(t)) {
+        return `https://${t.replace(/^(https?:\/\/)?/i, "")}`;
+      }
+      return t;
+    }
+
+    // Nomes, textos e outros: apenas não permitir controle inválido no início (mantém espaços internos)
+    return v;
+  }
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    // Limpar erro do campo quando usuário começar a digitar
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
+    const masked = applyMaskForField(name, value);
+    setField(name, masked);
+  };
+
+  // handlers for dynamic lists (experiencias, formacao, certificacoes, projetos)
+  function updateListField(listName, idx, key, value) {
+    // aplica máscara condicional em campos conhecidos (ex: ano dentro de certificacoes)
+    let val = value;
+    const keyName = String(key).toLowerCase();
+    if (keyName === "ano") val = onlyDigits(value).slice(0,4);
+    if (keyName === "telefone") val = typeof formatarTelefone === "function" ? formatarTelefone(value) : value;
+    if (keyName === "cpf") val = typeof formatarCPF === "function" ? formatarCPF(value) : value;
+    if (keyName === "valor_hora") val = maskCurrencyInput(value);
+    if (keyName.includes("link") && val && !/^https?:\/\//i.test(val)) {
+      val = `https://${val.replace(/^(https?:\/\/)?/i, "")}`;
     }
+
+    setFormData(prev => {
+      const arr = Array.isArray(prev[listName]) ? [...prev[listName]] : [];
+      arr[idx] = { ...(arr[idx] || {}), [key]: val };
+      return { ...prev, [listName]: arr };
+    });
+  }
+  function addListItem(listName, factory) {
+    setFormData(prev => ({ ...prev, [listName]: [...(prev[listName] || []), factory()] }));
+  }
+  function removeListItem(listName, idx) {
+    setFormData(prev => {
+      const arr = [...(prev[listName] || [])];
+      arr.splice(idx, 1);
+      if (arr.length === 0) {
+        const empty = listName === 'experiencias' ? emptyExperience() :
+                      listName === 'formacao' ? emptyFormacao() :
+                      listName === 'certificacoes' ? emptyCert() : emptyProjeto();
+        return { ...prev, [listName]: [empty] };
+      }
+      return { ...prev, [listName]: arr };
+    });
+  }
+
+  const basicValidate = () => {
+    const err = {};
+    if (!formData.nome || !formData.nome.trim()) err.nome = "Nome é obrigatório";
+    if (!formData.email || !formData.email.trim()) err.email = "E-mail é obrigatório";
+    if (!formData.senha) err.senha = "Senha é obrigatória";
+    return err;
+  };
+
+  const csvToArray = (s) => {
+    if (!s) return [];
+    return s.split(",").map(x => x.trim()).filter(Boolean);
   };
 
   const handleSubmit = async (e) => {
@@ -43,55 +177,119 @@ const CadastroProfessor = () => {
     setLoading(true);
     setErrors({});
 
-    // Preparar dados para envio
-    const dadosParaEnvio = {
-      nome: formData.nome,
-      email: formData.email,
+    const validation = basicValidate();
+    if (Object.keys(validation).length) {
+      setErrors(validation);
+      setLoading(false);
+      return;
+    }
+
+    // monta payload compatível com backend
+    const payload = {
+      nome: formData.nome.trim(),
+      email: formData.email.trim(),
       senha: formData.senha,
-      telefone: formData.telefone || null,
-      cpf: formData.cpf || null,
-      area: formData.area || null,  
+      telefone: formData.telefone?.trim() || null,
+      cpf: formData.cpf?.trim() || null,
+      area: formData.area || null,
       data_nascimento: formData.data_nascimento || null,
-      bio: formData.historico_academico_profissional || null,
-      endereco: formData.endereco || null
+      historico_academico_profissional: formData.historico_academico_profissional?.trim() || null,
+      endereco: formData.endereco?.trim() || null,
+
+      // listas simples: enviamos como array de strings
+      especializacoes: csvToArray(formData.especializacoes),
+      quer_ensinar: csvToArray(formData.quer_ensinar),
+      modalidades: csvToArray(formData.modalidades),
+      idiomas: csvToArray(formData.idiomas),
+
+      // valor_hora como número se informado
+      valor_hora: formData.valor_hora === '' ? undefined : Number(String(formData.valor_hora).replace(",", ".").trim()),
+
+      // disponibilidade como objeto (se qualquer campo preenchido)
+      disponibilidade: (formData.disponibilidade_timezone || formData.disponibilidade_dias || formData.disponibilidade_horarios)
+        ? {
+            timezone: formData.disponibilidade_timezone || undefined,
+            dias: csvToArray(formData.disponibilidade_dias),
+            horarios: csvToArray(formData.disponibilidade_horarios)
+          }
+        : undefined,
+
+      // listas complexas: enviamos arrays de objetos (seu backend já aceita isso)
+      experiencias: Array.isArray(formData.experiencias) ? formData.experiencias.map(ex => {
+        return {
+          cargo: (ex.cargo || '').trim(),
+          empresa: (ex.empresa || '').trim(),
+          inicio: (ex.inicio || '').trim(),
+          fim: (ex.fim || '').trim(),
+          descricao: (ex.descricao || '').trim(),
+          link: (ex.link || '').trim() || undefined
+        };
+      }).filter(x => x.cargo || x.empresa || x.descricao) : undefined,
+
+      formacao: Array.isArray(formData.formacao) ? formData.formacao.map(f => ({
+        instituicao: (f.instituicao || '').trim(),
+        curso: (f.curso || '').trim(),
+        inicio: (f.inicio || '').trim(),
+        fim: (f.fim || '').trim(),
+        descricao: (f.descricao || '').trim()
+      })).filter(x => x.instituicao || x.curso) : undefined,
+
+      certificacoes: Array.isArray(formData.certificacoes) ? formData.certificacoes.map(c => ({
+        titulo: (c.titulo || '').trim(),
+        org: (c.org || '').trim(),
+        ano: (c.ano || '').trim(),
+        link: (c.link || '').trim() || undefined
+      })).filter(x => x.titulo) : undefined,
+
+      projetos: Array.isArray(formData.projetos) ? formData.projetos.map(p => ({
+        titulo: (p.titulo || '').trim(),
+        resumo: (p.resumo || '').trim(),
+        link: (p.link || '').trim() || undefined
+      })).filter(x => x.titulo || x.resumo) : undefined,
+
+      links: {
+        linkedin: formData.links_linkedin?.trim() || undefined,
+        github: formData.links_github?.trim() || undefined,
+        site: formData.links_site?.trim() || undefined
+      }
     };
 
-    console.log('🔍 Dados sendo enviados:', dadosParaEnvio);
-    console.log('🔍 Area selecionada:', formData.area);
+    // remove undefined keys
+    Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
+    if (payload.links) {
+      Object.keys(payload.links).forEach(k => payload.links[k] === undefined && delete payload.links[k]);
+      if (!Object.keys(payload.links).length) delete payload.links;
+    }
 
-    const result = await cadastrarProfessor(dadosParaEnvio);
+    console.log('🔍 payload professor:', payload);
 
-    if (result.success) {
-      alert('Cadastro realizado com sucesso!');
-      // Redirecionar para login ou dashboard
-      window.location.href = '/login';
-    } else {
+    try {
+      const result = await cadastrarProfessor(payload);
+
+      if (result.success) {
+        alert('Cadastro realizado com sucesso!');
+        navigate('/login');
+        return;
+      }
+
       if (result.errors) {
         setErrors(result.errors);
       } else {
-        alert(result.message);
+        alert(result.message || 'Erro ao criar conta');
       }
+    } catch (err) {
+      console.error(err);
+      alert(err?.message || 'Erro desconhecido');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
     <div className="cadastro-professor-container">
       <HeaderDeslogado />
-
-        <div className="voltar-seta" onClick={() => navigate('/cadastro-escolha')} title="Voltar">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="26"
-          height="26"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="3.2"  
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
+      <div className="voltar-seta" onClick={() => navigate('/cadastro-escolha')} title="Voltar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M15 18l-6-6 6-6" />
         </svg>
       </div>
@@ -100,178 +298,236 @@ const CadastroProfessor = () => {
         <div className="cadastro-card">
           <h1 className="cadastro-title">Cadastro de Professor</h1>
           <p className="cadastro-subtitle">Preencha os dados para criar sua conta de professor</p>
-          
+
           <form className="cadastro-form" onSubmit={handleSubmit}>
+            {/* linha 1 */}
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="nome" className="form-label">Nome completo:</label>
-                <input
-                  type="text"
-                  id="nome"
-                  name="nome"
-                  value={formData.nome}
-                  onChange={handleInputChange}
-                  placeholder="Digite seu nome completo"
-                  className={`form-input ${errors.nome ? 'error' : ''}`}
-                  required
-                />
-                {errors.nome && <span className="error-message">{errors.nome}</span>}
+                <label>Nome completo</label>
+                <input name="nome" value={formData.nome} onChange={handleInputChange} required className={`form-input ${errors.nome? 'error':''}`} />
+                {errors.nome && <div className="error-message">{errors.nome}</div>}
               </div>
-              
               <div className="form-group">
-                <label htmlFor="email" className="form-label">E-mail:</label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="Digite seu email"
-                  className={`form-input ${errors.email ? 'error' : ''}`}
-                  required
-                />
-                {errors.email && <span className="error-message">{errors.email}</span>}
+                <label>E-mail</label>
+                <input name="email" type="email" value={formData.email} onChange={handleInputChange} required className={`form-input ${errors.email? 'error':''}`} />
+                {errors.email && <div className="error-message">{errors.email}</div>}
               </div>
             </div>
 
+            {/* linha 2 */}
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="telefone" className="form-label">Telefone:</label>
-                <input
-                  type="tel"
-                  id="telefone"
-                  name="telefone"
-                  value={formData.telefone}
-                  onChange={(e) => {
-                    const formatted = formatarTelefone(e.target.value);
-                    setFormData(prev => ({ ...prev, telefone: formatted }));
-                  }}
-                  placeholder="(11) 99999-9999"
-                  className={`form-input ${errors.telefone ? 'error' : ''}`}
-                />
-                {errors.telefone && <span className="error-message">{errors.telefone}</span>}
+                <label>Telefone</label>
+                <input name="telefone" value={formData.telefone} onChange={(e) => setField('telefone', applyMaskForField('telefone', e.target.value))} className="form-input" />
               </div>
-              
               <div className="form-group">
-                <label htmlFor="cpf" className="form-label">CPF:</label>
-                <input
-                  type="text"
-                  id="cpf"
-                  name="cpf"
-                  value={formData.cpf}
-                  onChange={(e) => {
-                    const formatted = formatarCPF(e.target.value);
-                    setFormData(prev => ({ ...prev, cpf: formatted }));
-                  }}
-                  placeholder="000.000.000-00"
-                  className={`form-input ${errors.cpf ? 'error' : ''}`}
-                />
-                {errors.cpf && <span className="error-message">{errors.cpf}</span>}
+                <label>CPF</label>
+                <input name="cpf" value={formData.cpf} onChange={(e) => setField('cpf', applyMaskForField('cpf', e.target.value))} className="form-input" />
               </div>
             </div>
 
+            {/* linha 3 */}
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="area" className="form-label">Área de especialização:</label>
-                <select 
-                  id="area" 
-                  name="area"
-                  value={formData.area}
-                  onChange={handleInputChange}
-                  className={`form-input ${errors.area ? 'error' : ''}`}
-                >
+                <label>Área de especialização</label>
+                <select name="area" value={formData.area} onChange={handleInputChange} className="form-input">
                   <option value="">Selecione uma área</option>
-                  <option value="Programação">Programação</option>
-                  <option value="Matemática">Matemática</option>
-                  <option value="Física">Física</option>
-                  <option value="Química">Química</option>
-                  <option value="Biologia">Biologia</option>
-                  <option value="História">História</option>
-                  <option value="Geografia">Geografia</option>
-                  <option value="Português">Português</option>
-                  <option value="Inglês">Inglês</option>
-                  <option value="Filosofia">Filosofia</option>
-                  <option value="Sociologia">Sociologia</option>
-                  <option value="Educação Física">Educação Física</option>
-                  <option value="Artes">Artes</option>
-                  <option value="Outros">Outros</option>
+                  <option>Programação</option><option>Matemática</option><option>Física</option><option>Química</option>
+                  <option>Biologia</option><option>História</option><option>Geografia</option><option>Português</option>
+                  <option>Inglês</option><option>Filosofia</option><option>Sociologia</option><option>Educação Física</option>
+                  <option>Artes</option><option>Outros</option>
                 </select>
-                {errors.area && <span className="error-message">{errors.area}</span>}
               </div>
-              
+
               <div className="form-group">
-                <label htmlFor="dataNascimento" className="form-label">Data de nascimento:</label>
-                <input
-                  type="date"
-                  id="dataNascimento"
-                  name="data_nascimento"
-                  value={formData.data_nascimento}
-                  onChange={handleInputChange}
-                  className={`form-input ${errors.data_nascimento ? 'error' : ''}`}
-                />
-                {errors.data_nascimento && <span className="error-message">{errors.data_nascimento}</span>}
+                <label>Data de nascimento</label>
+                <input name="data_nascimento" type="date" value={formData.data_nascimento} onChange={handleInputChange} className="form-input" />
               </div>
             </div>
 
+            {/* histórico */}
             <div className="form-group">
-              <label htmlFor="historicoAcademico" className="form-label">Histórico Acadêmico e Profissional:</label>
-              <textarea
-                id="historicoAcademico"
-                name="historico_academico_profissional"
-                value={formData.historico_academico_profissional}
-                onChange={handleInputChange}
-                placeholder="Descreva sua formação acadêmica, experiência profissional, certificações, etc."
-                className={`form-input form-textarea ${errors.bio ? 'error' : ''}`}
-                rows="4"
-              ></textarea>
-              {errors.bio && <span className="error-message">{errors.bio}</span>}
+              <label>Histórico Acadêmico e Profissional</label>
+              <textarea name="historico_academico_profissional" value={formData.historico_academico_profissional} onChange={handleInputChange} className="form-input form-textarea" rows="4" />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="endereco" className="form-label">Endereço completo:</label>
-              <input
-                type="text"
-                id="endereco"
-                name="endereco"
-                value={formData.endereco}
-                onChange={handleInputChange}
-                placeholder="Rua, número, bairro, cidade, estado"
-                className={`form-input ${errors.endereco ? 'error' : ''}`}
-              />
-              {errors.endereco && <span className="error-message">{errors.endereco}</span>}
+            {/* listas simples */}
+            <div className="form-row">
+              <div className="form-group">
+                <label>Especializações (vírgula)</label>
+                <input name="especializacoes" value={formData.especializacoes} onChange={handleInputChange} className="form-input" placeholder="Cálculo, Física, Python" />
+              </div>
+              <div className="form-group">
+                <label>Quero ensinar (vírgula)</label>
+                <input name="quer_ensinar" value={formData.quer_ensinar} onChange={handleInputChange} className="form-input" placeholder="Cálculo I, Álgebra" />
+              </div>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="senha" className="form-label">Senha:</label>
-              <input
-                type="password"
-                id="senha"
-                name="senha"
-                value={formData.senha}
-                onChange={handleInputChange}
-                placeholder="Digite sua senha"
-                className={`form-input ${errors.senha ? 'error' : ''}`}
-                required
-              />
-              {errors.senha && <span className="error-message">{errors.senha}</span>}
+            <div className="form-row">
+              <div className="form-group">
+                <label>Modalidades (vírgula)</label>
+                <input name="modalidades" value={formData.modalidades} onChange={handleInputChange} className="form-input" placeholder="Online, Presencial" />
+              </div>
+              <div className="form-group">
+                <label>Idiomas (vírgula)</label>
+                <input name="idiomas" value={formData.idiomas} onChange={handleInputChange} className="form-input" placeholder="PT-BR, EN-B2" />
+              </div>
             </div>
-            
-            <button 
-              type="submit" 
-              className="cadastro-button"
-              disabled={loading}
-            >
-              {loading ? 'CRIANDO CONTA...' : 'CRIAR CONTA DE PROFESSOR'}
-            </button>
-           {/* 🔹 Botão Voltar adicionado */}
-            <div style={{ textAlign: 'center', marginTop: '16px' }}>
-              <button
-                type="button"
-                className="btn--outline"
-                onClick={() => navigate('/cadastro-escolha')}
-              >
-                Voltar
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Valor / Hora (R$)</label>
+                <input name="valor_hora" type="text" inputMode="decimal" value={formData.valor_hora} onChange={(e) => setField('valor_hora', applyMaskForField('valor_hora', e.target.value))} className="form-input" />
+              </div>
+
+              <div className="form-group">
+                <label>Disponibilidade - fuso</label>
+                <input name="disponibilidade_timezone" value={formData.disponibilidade_timezone} onChange={handleInputChange} className="form-input" placeholder="America/Sao_Paulo" />
+                <small className="hint">Dias (vírgula) e Horários (vírgula) abaixo</small>
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Disponibilidade - dias (vírgula)</label>
+                <input name="disponibilidade_dias" value={formData.disponibilidade_dias} onChange={(e) => setField('disponibilidade_dias', applyMaskForField('disponibilidade_dias', e.target.value))} className="form-input" placeholder="Segunda, Terça, Quarta" />
+              </div>
+              <div className="form-group">
+                <label>Disponibilidade - horários (vírgula)</label>
+                <input name="disponibilidade_horarios" value={formData.disponibilidade_horarios} onChange={(e) => setField('disponibilidade_horarios', applyMaskForField('disponibilidade_horarios', e.target.value))} className="form-input" placeholder="09:00-12:00, 14:00-18:00" />
+              </div>
+            </div>
+
+            {/* experiências (opcional, não apenas trabalho) */}
+            <div className="form-group" style={{ marginBottom: 10 }}>
+              <label>Experiências (opcional)</label>
+              <p className="hint">Descreva experiências relevantes — como projetos, ensino, pesquisa, eventos ou trabalhos.</p>
+
+              {formData.experiencias.map((ex, i) => (
+                <div key={i} className="list-item" style={dynamicBlockStyle}>
+                  <input
+                    placeholder="Título ou atividade"
+                    value={ex.cargo}
+                    onChange={e => updateListField('experiencias', i, 'cargo', e.target.value)}
+                    className="form-input"
+                    style={smallInputStyle}
+                  />
+                  <textarea
+                    placeholder="Descrição (opcional)"
+                    value={ex.descricao}
+                    onChange={e => updateListField('experiencias', i, 'descricao', e.target.value)}
+                    className="form-input form-textarea small"
+                  />
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input
+                      placeholder="Período - início"
+                      value={ex.inicio}
+                      onChange={e => updateListField('experiencias', i, 'inicio', e.target.value)}
+                      className="form-input small"
+                    />
+                    <input
+                      placeholder="Período - fim"
+                      value={ex.fim}
+                      onChange={e => updateListField('experiencias', i, 'fim', e.target.value)}
+                      className="form-input small"
+                    />
+                  </div>
+                  <input
+                    placeholder="Link (opcional)"
+                    value={ex.link}
+                    onChange={e => updateListField('experiencias', i, 'link', e.target.value)}
+                    className="form-input"
+                  />
+                  <div style={{ marginTop: 6 }}>
+                    <button type="button" onClick={() => removeListItem('experiencias', i)}>Remover</button>
+                  </div>
+                </div>
+              ))}
+
+              <button type="button" onClick={() => addListItem('experiencias', emptyExperience)}>
+                Adicionar experiência
               </button>
+            </div>
+
+            {/* formação */}
+            <div className="form-group">
+              <label>Formação</label>
+              {formData.formacao.map((f, i) => (
+                <div key={i} className="list-item" style={dynamicBlockStyle}>
+                  <input placeholder="Instituição" value={f.instituicao} onChange={e => updateListField('formacao', i, 'instituicao', e.target.value)} className="form-input" />
+                  <input placeholder="Curso" value={f.curso} onChange={e => updateListField('formacao', i, 'curso', e.target.value)} className="form-input" />
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input placeholder="Início" value={f.inicio} onChange={e => updateListField('formacao', i, 'inicio', e.target.value)} className="form-input small" />
+                    <input placeholder="Fim" value={f.fim} onChange={e => updateListField('formacao', i, 'fim', e.target.value)} className="form-input small" />
+                  </div>
+                  <textarea placeholder="Descrição (opcional)" value={f.descricao} onChange={e => updateListField('formacao', i, 'descricao', e.target.value)} className="form-input form-textarea small" />
+                  <div style={{marginTop:6}}>
+                    <button type="button" onClick={() => removeListItem('formacao', i)}>Remover</button>
+                  </div>
+                </div>
+              ))}
+              <button type="button" onClick={() => addListItem('formacao', emptyFormacao)}>Adicionar formação</button>
+            </div>
+
+            {/* certificações */}
+            <div className="form-group">
+              <label>Certificações</label>
+              {formData.certificacoes.map((c, i) => (
+                <div key={i} className="list-item" style={dynamicBlockStyle}>
+                  <input placeholder="Título" value={c.titulo} onChange={e => updateListField('certificacoes', i, 'titulo', e.target.value)} className="form-input" />
+                  <input placeholder="Organização" value={c.org} onChange={e => updateListField('certificacoes', i, 'org', e.target.value)} className="form-input" />
+                  <input placeholder="Ano" value={c.ano} onChange={e => updateListField('certificacoes', i, 'ano', applyMaskForField('ano', e.target.value))} className="form-input small" />
+                  <input placeholder="Link (opcional)" value={c.link} onChange={e => updateListField('certificacoes', i, 'link', e.target.value)} className="form-input" />
+                  <div style={{marginTop:6}}>
+                    <button type="button" onClick={() => removeListItem('certificacoes', i)}>Remover</button>
+                  </div>
+                </div>
+              ))}
+              <button type="button" onClick={() => addListItem('certificacoes', emptyCert)}>Adicionar certificação</button>
+            </div>
+
+            {/* projetos */}
+            <div className="form-group">
+              <label>Projetos</label>
+              {formData.projetos.map((p, i) => (
+                <div key={i} className="list-item" style={dynamicBlockStyle}>
+                  <input placeholder="Título" value={p.titulo} onChange={e => updateListField('projetos', i, 'titulo', e.target.value)} className="form-input" />
+                  <input placeholder="Link (opcional)" value={p.link} onChange={e => updateListField('projetos', i, 'link', e.target.value)} className="form-input" />
+                  <textarea placeholder="Resumo" value={p.resumo} onChange={e => updateListField('projetos', i, 'resumo', e.target.value)} className="form-input form-textarea small" />
+                  <div style={{marginTop:6}}>
+                    <button type="button" onClick={() => removeListItem('projetos', i)}>Remover</button>
+                  </div>
+                </div>
+              ))}
+              <button type="button" onClick={() => addListItem('projetos', emptyProjeto)}>Adicionar projeto</button>
+            </div>
+
+            {/* links */}
+            <div className="form-row">
+              <div className="form-group">
+                <label>LinkedIn</label>
+                <input name="links_linkedin" value={formData.links_linkedin} onChange={(e) => setField('links_linkedin', applyMaskForField('links_linkedin', e.target.value))} className="form-input" />
+              </div>
+              <div className="form-group">
+                <label>GitHub</label>
+                <input name="links_github" value={formData.links_github} onChange={(e) => setField('links_github', applyMaskForField('links_github', e.target.value))} className="form-input" />
+              </div>
+              <div className="form-group">
+                <label>Site / Portfólio</label>
+                <input name="links_site" value={formData.links_site} onChange={(e) => setField('links_site', applyMaskForField('links_site', e.target.value))} className="form-input" />
+              </div>
+            </div>
+
+            {/* senha e ações */}
+            <div className="form-group">
+              <label>Senha</label>
+              <input name="senha" type="password" value={formData.senha} onChange={handleInputChange} className={`form-input ${errors.senha? 'error':''}`} required />
+              {errors.senha && <div className="error-message">{errors.senha}</div>}
+            </div>
+
+            <div style={{display:'flex', gap:12, marginTop:12}}>
+              <button type="submit" className="cadastro-button" disabled={loading}>{loading ? 'CRIANDO CONTA...' : 'CRIAR CONTA DE PROFESSOR'}</button>
+              <button type="button" className="btn--outline" onClick={() => navigate('/cadastro-escolha')}>Voltar</button>
             </div>
           </form>
         </div>
