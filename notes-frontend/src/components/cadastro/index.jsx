@@ -12,7 +12,8 @@ export default function PerfilProfessor() {
     complemento: "",
     bairro: "",
     cidade: "",
-    uf: ""
+    uf: "",
+    area: ""
   });
 
   const [buscandocep, setBuscandoCEP] = useState(false);

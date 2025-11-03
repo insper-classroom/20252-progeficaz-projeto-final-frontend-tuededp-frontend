@@ -14,7 +14,7 @@ import ChatsPage from './pages/chats/chats';
 import PerfilPublico from './pages/perfil-publico';
 import JunteSeNos from './pages/junte-se-nos/junte-se-nos';
 import ProtectedRoute from './components/ProtectedRoute';
-
+import ListaProfessores from "./pages/lista-professores/lista-professores.jsx";
 
 function App() {
   return (
@@ -43,9 +43,12 @@ function App() {
           />
           <Route path="/cadastro-aluno" element={<CadastroAluno />} />
           <Route path="/cadastro-professor" element={<CadastroProfessor />} />
+          <Route path="/perfil" element={<PerfilAluno />} />
           <Route path="/perfil-aluno" element={<PerfilAluno />} />
           <Route path="/chats" element={<ChatsPage />} />
           <Route path="/aluno/:slug" element={<PerfilPublico />} />
+          <Route path="/professores" element={<ListaProfessores />} />  
+          <Route path="/professor/:slug" element={<PerfilPublico />} />
         </Routes>
       </div>
     </Router>
