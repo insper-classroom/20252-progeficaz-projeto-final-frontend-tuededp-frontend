@@ -1,6 +1,6 @@
 // src/pages/chats/chats.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { getToken } from "../../services/authService";
 import {
   searchUsers,
@@ -53,9 +53,7 @@ function safeTime(...candidates) {
   const isToday = d.toDateString() === now.toDateString();
   const isThisYear = d.getFullYear() === now.getFullYear();
 
-  if (isToday) {
-    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  }
+  if (isToday) return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   if (isThisYear) {
     return (
       d.toLocaleDateString([], { day: "2-digit", month: "2-digit" }) +
@@ -74,6 +72,8 @@ function safeTime(...candidates) {
 
 export default function ChatsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const handledToRef = useRef(false);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
 
@@ -92,26 +92,71 @@ export default function ChatsPage() {
   const endRef = useRef(null);
 
   // ---- Controles para polling incremental ----
-  const lastAtRef = useRef(null);     // cursor ISO da última msg carregada
-  const msgTimerRef = useRef(null);   // intervalo do feed de mensagens
-  const convTimerRef = useRef(null);  // intervalo para atualizar preview da sidebar
-  const isFetchingRef = useRef(false);// trava reentrância
+  const lastAtRef = useRef(null);
+  const msgTimerRef = useRef(null);
+  const convTimerRef = useRef(null);
+  const isFetchingRef = useRef(false);
 
-  /* ============ Primeira carga das conversas ============ */
+  
   useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        const convs = await getConversations();
-        setConversations(convs);
-        if (convs?.length) setActiveId(convs[0].id);
-      } catch (err) {
-        console.error("[chat] erro ao carregar conversas:", err);
-      } finally {
-        setLoading(false);
+  if (handledToRef.current) return;
+  const params = new URLSearchParams(location.search);
+  const to = params.get("to");
+  if (!to) return;
+
+  handledToRef.current = true;
+  (async () => {
+    try {
+      const conv = await ensureConversationWith(to);
+      setConversations((prev) => {
+        const idx = prev.findIndex((c) => c.id === conv.id);
+        if (idx === -1) return [conv, ...prev];
+        const old = prev[idx];
+        const next = [...prev];
+        next[idx] = {
+          ...old,
+          title: conv.title || old.title,
+          other: { ...(old.other || {}), ...(conv.other || {}) },
+          lastMessage: conv.lastMessage || old.lastMessage || null,
+          created_at: old.created_at || conv.created_at,
+          updated_at: conv.updated_at || old.updated_at,
+        };
+        return next;
+      });
+      setActiveId(conv.id);
+      navigate("/chats", { replace: true }); // limpa ?to=
+    } catch (err) {
+      console.error("[chat] erro ao abrir via ?to=", err);
+      alert(err.message || "Não foi possível abrir a conversa.");
+    }
+  })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [location.search]);
+  /* ============ Primeira carga das conversas ============ */
+/* ============ Primeira carga das conversas ============ */
+useEffect(() => {
+  (async () => {
+    try {
+      setLoading(true);
+      const convs = await getConversations();
+      setConversations(convs);
+
+      // ⚠️ Só auto-seleciona a primeira conversa se:
+      // - NÃO veio via ?to= (checa a query)
+      // - O handler de ?to= ainda não rodou (handledToRef)
+      // - Ainda NÃO há uma conversa ativa (activeId)
+      const hasTo = new URLSearchParams(location.search).has("to");
+      if (convs?.length && !hasTo && !handledToRef.current && !activeId) {
+        setActiveId(convs[0].id);
       }
-    })();
-  }, []);
+    } catch (err) {
+      console.error("[chat] erro ao carregar conversas:", err);
+    } finally {
+      setLoading(false);
+    }
+  })();
+}, [location.search, activeId]);
+
 
   /* ============ Carrega mensagens da conversa ativa ============ */
   useEffect(() => {
@@ -168,7 +213,7 @@ export default function ChatsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId]);
 
-  /* ============ Polling leve das conversas (preserva avatar/bio) ============ */
+  /* ============ Polling leve das conversas ============ */
   useEffect(() => {
     if (convTimerRef.current) clearInterval(convTimerRef.current);
 
@@ -184,7 +229,7 @@ export default function ChatsPage() {
             return {
               ...n,
               title: old.title || n.title,
-              other: { ...(n.other || {}), ...(old.other || {}) }, // preserva avatar/bio já enriquecidos
+              other: { ...(n.other || {}), ...(old.other || {}) },
               lastMessage: n.lastMessage || old.lastMessage || null,
             };
           });
@@ -231,16 +276,15 @@ export default function ChatsPage() {
     }
   }
 
-  /* ============ Abrir chat via busca (garante dados ricos) ============ */
+  /* ============ Abrir chat via busca ============ */
   async function openChatWith(user) {
     try {
-      const conv = await ensureConversationWith(user.id); // vem com other.avatarUrl/bio/etc
+      const conv = await ensureConversationWith(user.id);
 
       setConversations((prev) => {
         const idx = prev.findIndex((c) => c.id === conv.id);
-        if (idx === -1) {
-          return [conv, ...prev];
-        }
+        if (idx === -1) return [conv, ...prev];
+
         const old = prev[idx];
         const merged = {
           ...old,
@@ -264,7 +308,7 @@ export default function ChatsPage() {
     }
   }
 
-  /* ============ Selecionar conversa existente (enriquece se precisar) ============ */
+  /* ============ Selecionar conversa existente ============ */
   async function selectConversation(conv) {
     setActiveId(conv.id);
 
@@ -388,7 +432,7 @@ export default function ChatsPage() {
                       <Avatar src={u?.avatarUrl || u?.avatar_url} name={u?.nome} className="sm" />
                       <div>
                         <div className="title-row">
-                          <strong>{u?.nome || "Usuário"}</strong>
+                          <strong>{(u?.nome ?? "").trim() || u?.email || "Usuário"}</strong>
                           {badge && <span className="role">{badge}</span>}
                         </div>
                         <small className="muted ellipsis">{bio}</small>
@@ -406,12 +450,10 @@ export default function ChatsPage() {
                   const other = c?.other || {};
                   const name = other?.nome || c?.title || "Conversa";
                   const avatarSrc = other?.avatarUrl || other?.avatar_url;
-                  const bio =
-                    (other?.bio && String(other.bio).trim()) ||
-                    other?.headline ||
-                    c?.lastMessage?.text ||
-                    "(sem mensagens)";
                   const badge = other?.tipo ? (other.tipo === "prof" ? "Professor" : "Aluno") : null;
+                  // ✅ preview da última mensagem (corrige tela branca)
+                  const previewText =
+                    (c?.lastMessage?.text || "").trim() || "(sem mensagens)";
 
                   return (
                     <button
@@ -443,7 +485,7 @@ export default function ChatsPage() {
                             )}
                           </time>
                         </div>
-                        <small className="muted ellipsis">{bio}</small>
+                        <small className="preview">{previewText}</small>
                       </div>
                     </button>
                   );

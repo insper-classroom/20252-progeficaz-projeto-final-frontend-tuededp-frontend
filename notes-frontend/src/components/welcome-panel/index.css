@@ -1,24 +1,88 @@
-.welcome-panel{
-  display:flex; justify-content:space-between; align-items:flex-start;
-  padding: 4px 0 0 12px;               /* menos recuo à esquerda */
+.welcome-panel {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1.5rem;
+  width: 90%;
+  max-width: 1200px;
+  padding: 0 1rem;
+  margin-top: -2rem;
+  box-sizing: border-box;
 }
 
-/* Título levemente menor e com altura de linha compacta */
-.welcome-panel h2{
-  font-size: 44px;                     /* antes 40–48 no seu */
-  line-height: 1.05;
-  letter-spacing: .2px;
-  max-width: 420px;                    /* evita quebrar estranho */
-  margin: 0;
-  color:#0A3167;
+.welcome-text {
+  text-align: right;
 }
 
-/* Link “Adicionar interesses” encosta no topo e fica mais discreto */
-.add-link{
-  margin-top: 6px;
-  font-size: 14.5px;
+.welcome-text h2 {
+  font-size: 20px;
   font-weight: 700;
-  color:#2C6ECB;
-  background:none; border:none; cursor:pointer;
-  display:inline-flex; gap:8px; align-items:center;
+  color: #0a3167;
+  margin: 0;
+  line-height: 1.1;
+}
+
+.welcome-avatar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.avatar-ring {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: rgba(44, 110, 203, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(44, 110, 203, 0.2);
+  background-color: #fff;
+}
+
+.add-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: #2c6ecb;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: opacity 0.2s ease;
+  opacity: 0.9;
+}
+
+.add-link:hover {
+  opacity: 1;
+}
+
+@media (max-width: 900px) {
+  .welcome-panel {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .welcome-text {
+    text-align: left;
+  }
+
+  .welcome-text h2 {
+    font-size: 20px;
+  }
+
+  .welcome-avatar {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+  }
 }

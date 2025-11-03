@@ -1,56 +1,61 @@
 import React from "react";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import HeaderLogado from "../../components/header-logado";
 import Footer from "../../components/footer";
 import { getToken } from "../../services/authService";
 import AgendarAula from "../../components/agendar-aula";
 import { getUser, getTipo } from "../../services/authService";
 import { getEstatisticasProfessor, listarAvaliacoes } from "../../services/avaliacoesService";
+
 import "./index.css";
 
 const API_BASE_URL = 'http://localhost:5000';
 
-// Função auxiliar para detectar se o usuário é aluno
+/* ===== helpers ===== */
 function isAluno() {
-  // Tenta obter do authService primeiro
   const tipoAuth = getTipo();
-  if (tipoAuth && tipoAuth.toLowerCase() === "aluno") {
-    return true;
-  }
-  
-  // Tenta do objeto user
+  if (tipoAuth && tipoAuth.toLowerCase() === "aluno") return true;
+
   const me = getUser() || {};
-  if (me.tipo && me.tipo.toLowerCase() === "aluno") {
-    return true;
-  }
-  
-  // Tenta do localStorage
+  if (me.tipo && me.tipo.toLowerCase() === "aluno") return true;
+
   const tipoStorage = localStorage.getItem("tipo");
-  if (tipoStorage && tipoStorage.toLowerCase() === "aluno") {
-    return true;
-  }
-  
-  // Se não encontrou nenhum tipo, assume que não é aluno (por segurança)
+  if (tipoStorage && tipoStorage.toLowerCase() === "aluno") return true;
+
   return false;
+}
+function normalizeId(any) {
+  if (!any) return null;
+  if (typeof any === "string") return any;
+  if (typeof any === "object") {
+    if (any.$oid) return any.$oid;
+    if (any._id?.$oid) return any._id.$oid;
+    if (typeof any._id === "string") return any._id;
+  }
+  try { return String(any); } catch { return null; }
 }
 
 export default function PerfilPublico(){
   const { slug } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
+
   const [usuario, setUsuario] = React.useState(null);
   const [err, setErr] = React.useState("");
   const [mostrarAgendar, setMostrarAgendar] = React.useState(false);
   const [statsAvaliacoes, setStatsAvaliacoes] = React.useState(null);
   const [avaliacoes, setAvaliacoes] = React.useState([]);
+
   const isProfessor = location.pathname.startsWith("/professor/");
+  const me = getUser();
 
   React.useEffect(()=>{
     (async ()=>{
       try{
         let r;
         let data;
-        // Seleciona a entidade (aluno/professor)
         if (isProfessor) {
+          // professor por slug → fallback por id com bearer
           r = await fetch(`${API_BASE_URL}/api/professores/slug/${slug}`);
           if (!r.ok) {
             const tk = getToken();
@@ -58,7 +63,7 @@ export default function PerfilPublico(){
             r = await fetch(`${API_BASE_URL}/api/professores/${slug}`, { headers });
           }
         } else {
-          // tenta primeiro por slug; se falhar, tenta por id com Authorization
+          // aluno por slug → fallback por id com bearer (usa proxy do Vite)
           r = await fetch(`/api/alunos/slug/${slug}`);
           if (!r.ok) {
             const tk = getToken();
@@ -98,14 +103,28 @@ export default function PerfilPublico(){
       alert("Você precisa estar logado como aluno para agendar uma aula.");
       return;
     }
-    
-    // Usa a função auxiliar para verificar se é aluno
     if (!isAluno()) {
       alert("Apenas alunos podem agendar aulas.");
       return;
     }
-    
     setMostrarAgendar(true);
+  };
+
+  const iniciarConversa = () => {
+    const targetId = normalizeId(usuario?._id);
+    if (!targetId) {
+      return alert("Não foi possível identificar o usuário para iniciar a conversa.");
+    }
+    if (!me) {
+      alert("Você precisa estar logado para iniciar uma conversa.");
+      const next = `/chats?to=${targetId}`;
+      return navigate(`/login?next=${encodeURIComponent(next)}`);
+    }
+    if (normalizeId(me?._id) === targetId) {
+      return alert("Você já está no seu próprio perfil 😉");
+    }
+    // Rota correta é /chats
+    navigate(`/chats?to=${targetId}`);
   };
 
   if(err) return <div className="container">{err}</div>;
@@ -127,12 +146,26 @@ export default function PerfilPublico(){
             {usuario.endereco?.cidade && <p className="pp-local">{usuario.endereco.cidade} • {usuario.endereco.estado}</p>}
             <div className="pp-actions">
               {isProfessor ? (
-                <button className="btn btn--primary" onClick={handleAgendarClick}>Agendar Aula</button>
-              ) : (
                 <>
-                  <a className="btn btn--primary" href={`/chat?to=${usuario._id}`}>Pedir aula</a>
-                  <a className="btn btn--outline" href={`/chat?to=${usuario._id}&tipo=study`}>Convidar para estudar</a>
+                  <button className="btn btn--primary" onClick={handleAgendarClick}>
+                    Agendar Aula
+                  </button>
+                  <button
+                    className="btn btn--outline"
+                    onClick={iniciarConversa}
+                    disabled={!usuario?._id}
+                  >
+                    Iniciar conversa
+                  </button>
                 </>
+              ) : (
+                <button
+                  className="btn btn--primary"
+                  onClick={iniciarConversa}
+                  disabled={!usuario?._id}
+                >
+                  Iniciar conversa
+                </button>
               )}
             </div>
           </div>

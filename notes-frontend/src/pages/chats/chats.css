@@ -190,3 +190,64 @@ html, body, #root { height: 100%; }
 
 /* Truncar subtítulos */
 .ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 420px; }
+/* ===== Resultados da busca: não deixar o NOME sumir ===== */
+/* ===== FIX: nome sumindo na lista de resultados da busca ===== */
+
+/* Item: avatar fixo + coluna de textos que pode encolher */
+.chats-aside .search-results .result-item{
+  display:flex !important;
+  align-items:center !important;
+  gap:10px !important;
+}
+
+.chats-aside .search-results .result-item .avatar,
+.chats-aside .search-results .result-item .avatar-img{
+  width:36px !important;
+  height:36px !important;
+  flex:0 0 36px !important;      /* não encolhe */
+}
+
+/* A coluna de textos PRECISA ter min-width:0 para o ellipsis funcionar */
+.chats-aside .search-results .result-item > div{
+  flex:1 1 auto !important;
+  min-width:0 !important;
+}
+
+/* Linha do título: nome manda no espaço; badge não empurra */
+.chats-aside .search-results .result-item .title-row{
+  display:flex !important;
+  align-items:center !important;
+  gap:8px !important;
+  justify-content:flex-start !important;
+}
+
+/* Nome: não pode encolher a 0; trunca com reticências */
+.chats-aside .search-results .result-item .title-row > strong{
+  display:block !important;
+  flex:1 1 auto !important;
+  min-width:0 !important;              /* ESSENCIAL */
+  max-width:100% !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+  color:var(--ink) !important;
+  font-weight:700 !important;
+  font-size:15px !important;
+  line-height:1.2 !important;
+  visibility:visible !important;
+  opacity:1 !important;
+}
+
+/* Badge fixo à direita */
+.chats-aside .search-results .result-item .title-row .role{
+  flex:0 0 auto !important;
+}
+
+/* Bio uma linha */
+.chats-aside .search-results .result-item .muted{
+  display:block !important;
+  margin-top:2px !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+}
