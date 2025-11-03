@@ -1,6 +1,31 @@
 // Serviço de API para integração com backend
 const API_BASE_URL = 'http://localhost:5000';
 
+// Buscar estatísticas gerais da plataforma
+export const buscarEstatisticas = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/stats`);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('[buscarEstatisticas] Erro na resposta:', errorData);
+      return { error: errorData.error || 'Erro ao buscar estatísticas' };
+    }
+    
+    const data = await response.json();
+    console.log('[buscarEstatisticas] Dados recebidos:', data);
+    
+    return { 
+      totalAlunos: data.total_alunos || 0,
+      totalProfessores: data.total_professores || 0,
+      totalAulas: data.total_aulas || 0
+    };
+  } catch (error) {
+    console.error('[buscarEstatisticas] Erro ao buscar estatísticas:', error);
+    return { error: 'Não foi possível conectar ao servidor' };
+  }
+};
+
 // Função para validar CEP
 export const validarCEP = async (cep) => {
   try {
@@ -141,7 +166,13 @@ export const buscarAgendamentosProfessor = async (professorId) => {
 // Função para buscar avaliações de um professor
 export const buscarAvaliacoesProfessor = async (professorId) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/avaliacoes?professor=${professorId}`);
+    // Tenta primeiro com id_prof (padrão do backend)
+    let response = await fetch(`${API_BASE_URL}/api/avaliacoes?id_prof=${professorId}`);
+    
+    // Se não funcionar, tenta com professor
+    if (!response.ok) {
+      response = await fetch(`${API_BASE_URL}/api/avaliacoes?professor=${professorId}`);
+    }
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -154,7 +185,7 @@ export const buscarAvaliacoesProfessor = async (professorId) => {
     const data = await response.json();
     return {
       success: true,
-      data: data.data || []
+      data: Array.isArray(data) ? data : (data.data || [])
     };
   } catch (error) {
     console.error('Erro ao buscar avaliações:', error);
@@ -193,6 +224,25 @@ export const buscarStatsProfessor = async (professorId) => {
 };
 
 // Função para buscar professores
+// Buscar professores em alta (melhores avaliações)
+export const buscarProfessoresEmAlta = async (limit = 6) => {
+  try {
+    const url = `${API_BASE_URL}/api/professores/destaque?limit=${limit}`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return { error: errorData.error || 'Erro ao buscar professores em alta' };
+    }
+    
+    const data = await response.json();
+    return { data: data.data || [], total: data.total || 0 };
+  } catch (error) {
+    console.error('Erro ao buscar professores em alta:', error);
+    return { error: 'Não foi possível conectar ao servidor' };
+  }
+};
+
 export const buscarProfessores = async (params = {}) => {
   try {
     const queryParams = new URLSearchParams();
@@ -511,6 +561,90 @@ export const criarAula = async (aulaData) => {
     return {
       success: false,
       error: error.message || 'Erro desconhecido ao criar aula'
+    };
+  }
+};
+
+// Função para atualizar status de um agendamento
+export const atualizarStatusAgendamento = async (agendamentoId, novoStatus) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return {
+        success: false,
+        error: 'Você precisa estar logado para atualizar o status'
+      };
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/agenda/${agendamentoId}/status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ status: novoStatus })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return {
+        success: false,
+        error: errorData.error || errorData.msg || `Erro ${response.status}: ${response.statusText}`
+      };
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      data: data
+    };
+  } catch (error) {
+    console.error('Erro ao atualizar status do agendamento:', error);
+    return {
+      success: false,
+      error: error.message || 'Erro de conexão'
+    };
+  }
+};
+
+// Função para atualizar status de uma aula
+export const atualizarStatusAula = async (aulaId, novoStatus) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return {
+        success: false,
+        error: 'Você precisa estar logado para atualizar o status'
+      };
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/aulas/${aulaId}/status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ status: novoStatus })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return {
+        success: false,
+        error: errorData.error || errorData.msg || `Erro ${response.status}: ${response.statusText}`
+      };
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      data: data
+    };
+  } catch (error) {
+    console.error('Erro ao atualizar status da aula:', error);
+    return {
+      success: false,
+      error: error.message || 'Erro de conexão'
     };
   }
 };

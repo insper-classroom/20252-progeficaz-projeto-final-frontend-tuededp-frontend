@@ -1,10 +1,13 @@
 // components/perfil-publico/index.jsx
 import React from "react";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import HeaderLogado from "../../components/header-logado";
 import Footer from "../../components/footer";
+import { getToken } from "../../services/authService";
 import AgendarAula from "../../components/agendar-aula";
 import { getUser, getTipo } from "../../services/authService";
+import { getEstatisticasProfessor, listarAvaliacoes } from "../../services/avaliacoesService";
+
 import "./index.css";
 
 const API_BASE_URL = (import.meta && import.meta.env && import.meta.env.VITE_API_BASE) || "http://localhost:5000";
@@ -69,14 +72,30 @@ function isAlunoLocal() {
   if (stored && stored.toLowerCase() === "aluno") return true;
   return false;
 }
+function normalizeId(any) {
+  if (!any) return null;
+  if (typeof any === "string") return any;
+  if (typeof any === "object") {
+    if (any.$oid) return any.$oid;
+    if (any._id?.$oid) return any._id.$oid;
+    if (typeof any._id === "string") return any._id;
+  }
+  try { return String(any); } catch { return null; }
+}
 
 export default function PerfilPublico() {
   const { slug } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
+
   const [usuario, setUsuario] = React.useState(null);
   const [err, setErr] = React.useState("");
   const [mostrarAgendar, setMostrarAgendar] = React.useState(false);
+  const [statsAvaliacoes, setStatsAvaliacoes] = React.useState(null);
+  const [avaliacoes, setAvaliacoes] = React.useState([]);
+
   const isProfessor = location.pathname.startsWith("/professor/");
+  const me = getUser();
 
   React.useEffect(() => {
     let alive = true;
@@ -155,12 +174,18 @@ export default function PerfilPublico() {
             )}
             <div className="pp-actions">
               {isProfessor ? (
-                <button className="btn btn--primary" onClick={handleAgendarClick}>Agendar Aula</button>
-              ) : (
                 <>
                   <a className="btn btn--primary" href={`/chat?to=${usuario._id}`}>Enviar Mensagem</a>
                   <a className="btn btn--outline" href={`/chat?to=${usuario._id}&tipo=study`}>Convidar para estudar</a>
                 </>
+              ) : (
+                <button
+                  className="btn btn--primary"
+                  onClick={iniciarConversa}
+                  disabled={!usuario?._id}
+                >
+                  Iniciar conversa
+                </button>
               )}
             </div>
           </div>
