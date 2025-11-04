@@ -256,12 +256,21 @@ useEffect(() => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Ir para perfil público do aluno — deixa a página de perfil decidir (slug/id)
-  function goToAlunoProfile(e, userId) {
+  // Ir para perfil público — verifica o tipo e redireciona para o caminho correto
+  function goToProfile(e, userId, tipo) {
     e?.preventDefault();
     e?.stopPropagation();
     if (!userId) return;
-    navigate(`/aluno/${userId}`);
+    
+    // Normalizar o tipo
+    const tipoNormalizado = tipo?.toLowerCase();
+    
+    // Se for professor, vai para /professor/, senão vai para /aluno/
+    if (tipoNormalizado === 'prof' || tipoNormalizado === 'professor') {
+      navigate(`/professor/${userId}`);
+    } else {
+      navigate(`/aluno/${userId}`);
+    }
   }
 
   /* ============ Busca de usuários ============ */
@@ -462,7 +471,7 @@ useEffect(() => {
                       onClick={() => selectConversation(c)}
                     >
                       <span
-                        onClick={(e) => goToAlunoProfile(e, other?.id, other?.tipo)}
+                        onClick={(e) => goToProfile(e, other?.id, other?.tipo)}
                         style={{ cursor: "pointer", display: "inline-block" }}
                         title="Ver perfil"
                       >
@@ -471,7 +480,7 @@ useEffect(() => {
                       <div className="conv-main">
                         <div className="title-row">
                           <strong
-                            onClick={(e) => goToAlunoProfile(e, other?.id, other?.tipo)}
+                            onClick={(e) => goToProfile(e, other?.id, other?.tipo)}
                             style={{ cursor: "pointer", textDecoration: "underline" }}
                             title="Ver perfil"
                           >
@@ -510,7 +519,7 @@ useEffect(() => {
                     return (
                       <div className="peer">
                         <span
-                          onClick={(e) => goToAlunoProfile(e, other?.id, other?.tipo)}
+                          onClick={(e) => goToProfile(e, other?.id, other?.tipo)}
                           style={{ cursor: "pointer", display: "inline-block" }}
                           title="Ver perfil"
                         >
@@ -519,7 +528,7 @@ useEffect(() => {
                         <div>
                           <div className="title-row">
                             <strong
-                              onClick={(e) => goToAlunoProfile(e, other?.id, other?.tipo)}
+                              onClick={(e) => goToProfile(e, other?.id, other?.tipo)}
                               style={{ cursor: "pointer", textDecoration: "underline" }}
                               title="Ver perfil"
                             >
