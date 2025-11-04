@@ -226,3 +226,25 @@
   }
 }
 
+/* Botão para conectar Google Calendar */
+.professor-info button {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #0A66C2;
+  background: #fff;
+  color: #0A66C2;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.professor-info button:hover:not(:disabled) {
+  background: #eef6ff;
+  box-shadow: 0 2px 6px rgba(10, 102, 194, 0.25);
+}
+
+.professor-info button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
