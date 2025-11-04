@@ -27,13 +27,15 @@ export default function ProfessoresDestaque() {
   };
 
   const renderStars = (nota) => {
-    const fullStars = Math.floor(nota);
-    const hasHalfStar = nota % 1 >= 0.5;
-    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+    // Garantir que nota seja um número válido entre 0 e 5
+    const notaValida = Math.max(0, Math.min(5, Number(nota) || 0));
+    const fullStars = Math.floor(notaValida);
+    const hasHalfStar = notaValida % 1 >= 0.5;
+    const emptyStars = Math.max(0, Math.min(5, 5 - fullStars - (hasHalfStar ? 1 : 0)));
 
     return (
       <div className="pd-stars">
-        {[...Array(fullStars)].map((_, i) => (
+        {fullStars > 0 && [...Array(fullStars)].map((_, i) => (
           <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
           </svg>
@@ -43,7 +45,7 @@ export default function ProfessoresDestaque() {
             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fillOpacity="0.5" />
           </svg>
         )}
-        {[...Array(emptyStars)].map((_, i) => (
+        {emptyStars > 0 && [...Array(emptyStars)].map((_, i) => (
           <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
           </svg>

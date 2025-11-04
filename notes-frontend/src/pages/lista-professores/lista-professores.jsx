@@ -52,8 +52,8 @@ export default function ListaProfessores() {
     navigate('/');
   }
 
-  function handleVerPerfil(professorId) {
-    navigate(`/professor/${professorId}`);
+  function handleVerPerfil(professorIdOrSlug) {
+    navigate(`/professor/${professorIdOrSlug}`);
   }
 
   return (
@@ -95,7 +95,7 @@ export default function ListaProfessores() {
 
         {!loading && !error && professores.length === 0 && (
           <div className="empty-state">
-            <p>😔 Nenhum professor encontrado para esta área.</p>
+            <p>Nenhum professor encontrado para esta área.</p>
             <button onClick={handleVoltar} className="btn btn--outline">
               Voltar para home
             </button>
@@ -103,60 +103,46 @@ export default function ListaProfessores() {
         )}
 
         {!loading && !error && professores.length > 0 && (
-          <div className="professores-grid">
-            {professores.map((prof) => (
-              <div key={prof._id} className="professor-card">
-                <div className="professor-card-header">
-                  <div className="professor-avatar">
-                    {prof.nome.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="professor-info">
-                    <h3 className="professor-nome">{prof.nome}</h3>
-                    {prof.area && (
-                      <span className="professor-area">{prof.area}</span>
+          <div className="pd-grid">
+            {professores.map((prof) => {
+              const slug = prof.slug || prof.nome?.toLowerCase().replace(/\s+/g, '-');
+              return (
+                <div key={prof._id || prof.id} className="pd-card">
+                  <div className="pd-card__avatar">
+                    {prof.avatar && prof.avatar.startsWith('http') ? (
+                      <img src={prof.avatar} alt={prof.nome} />
+                    ) : prof.avatar ? (
+                      <img src={`http://localhost:5000${prof.avatar}`} alt={prof.nome} />
+                    ) : (
+                      <div className="pd-card__avatar-placeholder">
+                        {prof.nome?.charAt(0).toUpperCase() || 'P'}
+                      </div>
                     )}
                   </div>
-                </div>
-
-                {prof.bio && (
-                  <p className="professor-bio">
-                    {prof.bio.length > 150 
-                      ? `${prof.bio.substring(0, 150)}...` 
-                      : prof.bio}
-                  </p>
-                )}
-
-                <div className="professor-detalhes">
-                  {prof.endereco && (
-                    <div className="professor-detalhe">
-                      <span className="detalhe-icon">📍</span>
-                      <span>{prof.endereco}</span>
-                    </div>
-                  )}
                   
-                  {prof.email && (
-                    <div className="professor-detalhe">
-                      <span className="detalhe-icon">✉️</span>
-                      <span>{prof.email}</span>
-                    </div>
-                  )}
-                  
-                  {prof.telefone && (
-                    <div className="professor-detalhe">
-                      <span className="detalhe-icon">📞</span>
-                      <span>{prof.telefone}</span>
-                    </div>
-                  )}
+                  <div className="pd-card__content">
+                    <h3 className="pd-card__name">{prof.nome}</h3>
+                    
+                    {prof.bio && (
+                      <p className="pd-card__bio">{prof.bio.substring(0, 100)}{prof.bio.length > 100 ? '...' : ''}</p>
+                    )}
+                    
+                    {prof.email && (
+                      <div className="pd-card__email">
+                        <span className="pd-card__email-text">{prof.email}</span>
+                      </div>
+                    )}
+                    
+                    <button 
+                      className="pd-card__button"
+                      onClick={() => handleVerPerfil(slug || prof._id)}
+                    >
+                      Ver perfil completo
+                    </button>
+                  </div>
                 </div>
-
-                <button 
-                  onClick={() => handleVerPerfil(prof._id)}
-                  className="btn btn--primary btn-ver-perfil"
-                >
-                  Ver perfil completo
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
@@ -165,3 +151,4 @@ export default function ListaProfessores() {
     </div>
   );
 }
+
