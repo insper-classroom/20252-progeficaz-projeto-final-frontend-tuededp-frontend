@@ -352,74 +352,48 @@ export async function getAlunoBySlug(slug) {
   return r.json();
 }
 
-/** Upload de avatar (mantém endpoint existente)
- *  Envia para diferentes caminhos tentando compatibilidade com backends.
- */
 export async function uploadAvatar(file) {
   const me = Auth.getUser?.() || {};
   const id = me?._id || me?.id;
   if (!id) throw new Error("Usuário local sem ID. Faça login novamente.");
 
-  const tipo = getUserType();
-  const tipoPath = tipo === "professor" || tipo === "prof" ? "professores" : "alunos";
-
-  // Validações básicas de UX (opcional)
   if (!(file instanceof File)) throw new Error("Arquivo inválido.");
   if (file.size > 2 * 1024 * 1024) throw new Error("Arquivo acima de 2MB.");
   if (!/^image\/(png|jpe?g|webp|gif)$/i.test(file.type)) {
     throw new Error("Formato não suportado. Use PNG/JPG/WEBP.");
   }
 
-  // Monta o FormData — enviamos duas chaves para cobrir variações de backends
-  const makeForm = () => {
-    const form = new FormData();
-    form.append("file", file);
-    form.append("avatar", file);
-    return form;
-  };
+  const tipo = (Auth.getTipo?.() || me?.tipo || "").toLowerCase();
+  const tipoPath = (tipo === "professor" || tipo === "prof") ? "professores" : "alunos";
 
-  // headers: NUNCA setar Content-Type manualmente em multipart
-  const headers = {};
+  const form = new FormData();
+  form.append("avatar", file);
+  form.append("file", file);
+
   const token = Auth.getToken?.() || localStorage.getItem("token");
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-  // Tentamos múltiplos caminhos em todas as bases
-  const paths = [
-    `/files/avatar/${tipoPath}/${id}`, // caminho 1 (genérico)
-    `/${tipoPath}/${id}/avatar`,       // caminho 2 (muitos backends usam este)
-  ];
+  // **ÚNICA** rota esperada pelo back:
+  const url = `/api/files/avatar/${tipoPath}/${id}`;
 
-  let lastErr = null;
-  for (const base of BASES) {
-    for (const p of paths) {
-      const url = `${base}${p}`;
-      try {
-        const r = await fetch(url, { method: "POST", headers, body: makeForm() });
-        if (r.ok) {
-          const j = await r.json();
-          // Normaliza possíveis formatos de retorno
-          const avatarUrl = j?.avatarUrl || j?.user?.avatarUrl || j?.url || j?.avatar_url;
-          if (avatarUrl) {
-            Auth.setUser?.({ ...(Auth.getUser?.() || {}), avatarUrl });
-          } else if (j?.user) {
-            Auth.setUser?.(j.user);
-          }
-          return j;
-        }
-        // se não for ok, guarda a mensagem e tenta próximo path/base
-        lastErr = await r.text().catch(() => `HTTP ${r.status}`);
-      } catch (e) {
-        lastErr = e?.message || "Falha de rede";
-        // segue tentando as próximas combinações
-      }
-    }
+  const r = await fetch(url, { method: "POST", headers, body: form });
+  if (!r.ok) {
+    const txt = await r.text().catch(() => `HTTP ${r.status}`);
+    throw new Error(`Falha no upload: ${txt}`);
   }
 
-  throw new Error(
-    typeof lastErr === "string" ? lastErr :
-    lastErr?.message || "Falha no upload (verifique proxy/CORS e endpoint)."
-  );
+  const j = await r.json().catch(() => ({}));
+  const avatarUrl = j?.avatarUrl || j?.avatar_url || j?.url || j?.user?.avatarUrl || j?.user?.avatar_url;
+  if (avatarUrl) {
+    const cur = Auth.getUser?.() || {};
+    Auth.setUser?.({ ...cur, avatarUrl });
+  } else if (j?.user) {
+    Auth.setUser?.(j.user);
+  }
+  return j;
 }
+
+
 
 /** Troca de senha (se o seu back expõe esse endpoint) */
 export async function changePassword({ senhaAtual, novaSenha }) {
