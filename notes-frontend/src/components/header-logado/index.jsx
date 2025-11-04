@@ -231,13 +231,6 @@ const HeaderLogado = () => {
               <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>
             </svg>
           </button>
-
-          <button className="icon-button" aria-label="Favoritos" onClick={() => navigate("/favoritos")}>
-            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" strokeWidth="2">
-              <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 1 0-7.8 7.8l1 1L12 22l7.8-8.6 1-1a5.5 5.5 0 0 0 0-7.8z"/>
-            </svg>
-          </button>
-
           <button
             className="icon-button profile-btn"
             aria-label="Perfil"
