@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { buscarAulasProfessor, criarAgendamento } from '../../services/apiService';
 import { getUser } from '../../services/authService';
 import './index.css';
@@ -8,7 +8,9 @@ const AgendarAula = ({ professor, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(true);
   const [agendando, setAgendando] = useState(false);
   const [erro, setErro] = useState(null);
-  
+  const [profHasTokens, setProfHasTokens] = useState(false);
+  const popupRef = useRef(null);
+
   const [formData, setFormData] = useState({
     id_aula: '',
     data_hora: '',
@@ -19,8 +21,107 @@ const AgendarAula = ({ professor, onClose, onSuccess }) => {
   useEffect(() => {
     if (professor?._id || professor?.id) {
       carregarAulas();
+      setProfHasTokens(checkProfessorObjectHasTokens(professor));
     }
   }, [professor]);
+
+  // --- Helpers para OAuth/polling ---
+  const professorIdFromProp = () => professor?._id || professor?.id || '';
+
+  function checkProfessorObjectHasTokens(profObj) {
+    if (!profObj) return false;
+    // caso o próprio objeto professor passado já contenha google_tokens
+    return !!(profObj.google_tokens && profObj.google_tokens.refresh_token);
+  }
+
+  async function fetchProfessor(profId) {
+    // Busca o professor atual no backend (usar rota existente do seu backend)
+    try {
+      const res = await fetch(`/api/professores/${profId}`);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return json;
+    } catch (err) {
+      console.warn('Erro fetchProfessor', err);
+      return null;
+    }
+  }
+
+  async function startGoogleOauth(profId, agendaId = '') {
+    const url = `/api/agenda/google/oauth/start?professor_id=${profId}&agenda_id=${agendaId}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`Erro iniciando OAuth: ${res.status} ${text}`);
+    }
+    return res.json(); // espera { auth_url: "..." }
+  }
+
+  function openPopup(url) {
+    // abre popup inicialmente em branco pra evitar bloqueio
+    const popup = window.open('', 'google_oauth_popup', 'width=700,height=800');
+    if (!popup) throw new Error('Popup bloqueado. Permita popups para este site.');
+    popup.location = url;
+    return popup;
+  }
+
+  async function connectGoogleAndWait(profId, agendaId = '', {
+    timeoutMs = 2 * 60 * 1000,
+    intervalMs = 1000
+  } = {}) {
+    // Inicia OAuth e faz polling até detectar google_tokens no backend
+    try {
+      const { auth_url } = await startGoogleOauth(profId, agendaId);
+      popupRef.current = openPopup(auth_url);
+
+      const start = Date.now();
+
+      return await new Promise((resolve, reject) => {
+        const poll = setInterval(async () => {
+          // se popup foi fechado manualmente
+          if (!popupRef.current || popupRef.current.closed) {
+            clearInterval(poll);
+            reject(new Error('Popup fechado antes da autorização'));
+            return;
+          }
+
+          const elapsed = Date.now() - start;
+          if (elapsed > timeoutMs) {
+            clearInterval(poll);
+            try {
+              popupRef.current.close();
+            } catch (e) {}
+            reject(new Error('Tempo esgotado para autorizar Google Calendar'));
+            return;
+          }
+
+          // busca professor
+          try {
+            const prof = await fetchProfessor(profId);
+            if (prof && prof.google_tokens && prof.google_tokens.refresh_token) {
+              clearInterval(poll);
+              try {
+                popupRef.current.close();
+              } catch (e) {}
+              resolve(prof);
+              return;
+            }
+          } catch (err) {
+            // ignorar erro momentâneo e continuar polling
+            console.warn('Erro no polling:', err);
+          }
+        }, intervalMs);
+      });
+    } catch (err) {
+      // se start falhar
+      if (popupRef.current && !popupRef.current.closed) {
+        try { popupRef.current.close(); } catch (e) {}
+      }
+      throw err;
+    }
+  }
+
+  // --- Fim helpers OAuth ---
 
   const carregarAulas = async () => {
     setLoading(true);
@@ -28,17 +129,14 @@ const AgendarAula = ({ professor, onClose, onSuccess }) => {
     try {
       const professorId = professor._id || professor.id;
       console.log('[AgendarAula] Professor ID:', professorId);
-      console.log('[AgendarAula] Professor objeto:', professor);
-      
       const resultado = await buscarAulasProfessor(professorId);
-      
+
       console.log('[AgendarAula] Resultado da busca:', resultado);
-      
+
       if (resultado.success) {
         const aulasEncontradas = resultado.data || [];
-        console.log('[AgendarAula] Aulas encontradas:', aulasEncontradas.length);
         setAulas(aulasEncontradas);
-        
+
         if (aulasEncontradas.length === 0) {
           setErro('Este professor ainda não tem aulas disponíveis. Peça para o professor criar aulas no sistema.');
         }
@@ -61,7 +159,7 @@ const AgendarAula = ({ professor, onClose, onSuccess }) => {
 
     try {
       const aluno = getUser();
-      const alunoId = aluno._id || aluno.id;
+      const alunoId = aluno?._id || aluno?.id;
       const professorId = professor._id || professor.id;
 
       if (!alunoId) {
@@ -82,18 +180,16 @@ const AgendarAula = ({ professor, onClose, onSuccess }) => {
         return;
       }
 
-      // Combinar data e hora e garantir timezone UTC
+      // Combinar data e hora e garantir timezone
       const dataHoraString = `${formData.data_hora}T${formData.hora}:00`;
       const dataHoraObj = new Date(dataHoraString);
-      
-      // Verificar se a data é válida
+
       if (isNaN(dataHoraObj.getTime())) {
         setErro('Data ou hora inválida');
         setAgendando(false);
         return;
       }
-      
-      // Formatar para ISO string com timezone
+
       const dataHora = dataHoraObj.toISOString();
 
       const agendamentoData = {
@@ -104,20 +200,35 @@ const AgendarAula = ({ professor, onClose, onSuccess }) => {
         observacoes: formData.observacoes || ''
       };
 
+      // cria agendamento
       const resultado = await criarAgendamento(agendamentoData);
 
       if (resultado.success) {
-        if (onSuccess) {
-          onSuccess(resultado.data);
+        // se o professor não tiver tokens, iniciamos o fluxo OAuth e passamos agenda_id
+        const created = resultado.data;
+        // Professor object pode estar desatualizado; verificar no backend
+        const profLatest = await fetchProfessor(professorId);
+        const hasTokens = !!(profLatest && profLatest.google_tokens && profLatest.google_tokens.refresh_token);
+        if (!hasTokens) {
+          // inicia OAuth com agenda_id para que backend crie o evento após salvar tokens
+          try {
+            await connectGoogleAndWait(professorId, created._id);
+            setProfHasTokens(true);
+            // opcional: buscar agendamento atualizado se quiser mostrar link do evento
+            // const agUpdate = await fetch(`/api/agenda/${created._id}`) ...
+          } catch (err) {
+            // Se falhar no OAuth, apenas mostrar aviso e continuar (agendamento já criado no banco)
+            console.warn('OAuth falhou/foi cancelado:', err);
+            setErro('Agendamento criado, mas não foi possível conectar ao Google Calendar: ' + err.message);
+          }
         }
-        if (onClose) {
-          onClose();
-        }
+
+        if (onSuccess) onSuccess(resultado.data);
+        if (onClose) onClose();
       } else {
-        // Mensagens de erro mais amigáveis
         const errorMessage = resultado.error || 'Erro ao agendar aula';
         let mensagemFinal = errorMessage;
-        
+
         if (errorMessage.includes('schedule_conflict')) {
           mensagemFinal = 'Já existe um agendamento neste horário. Escolha outro horário.';
         } else if (errorMessage.includes('not_found')) {
@@ -125,7 +236,7 @@ const AgendarAula = ({ professor, onClose, onSuccess }) => {
         } else if (errorMessage.includes('invalid')) {
           mensagemFinal = 'Dados inválidos. Verifique as informações e tente novamente.';
         }
-        
+
         setErro(mensagemFinal);
       }
     } catch (error) {
@@ -144,14 +255,31 @@ const AgendarAula = ({ professor, onClose, onSuccess }) => {
     }));
   };
 
+  // Botão para conectar manualmente (útil para professor)
+  const handleManualConnect = async () => {
+    setErro(null);
+    const profId = professorIdFromProp();
+    if (!profId) {
+      setErro('ID do professor inválido para conectar Google Calendar');
+      return;
+    }
+    try {
+      // inicia OAuth sem agenda_id
+      await connectGoogleAndWait(profId, '');
+      setProfHasTokens(true);
+      alert('Google Calendar conectado com sucesso!');
+    } catch (err) {
+      console.error('Erro conectar manualmente:', err);
+      setErro(err.message || 'Erro ao conectar Google Calendar');
+    }
+  };
+
   // Gerar horários disponíveis (8h às 22h)
   const gerarHorarios = () => {
     const horarios = [];
     for (let h = 8; h <= 22; h++) {
       horarios.push(`${String(h).padStart(2, '0')}:00`);
-      if (h < 22) {
-        horarios.push(`${String(h).padStart(2, '0')}:30`);
-      }
+      if (h < 22) horarios.push(`${String(h).padStart(2, '0')}:30`);
     }
     return horarios;
   };
@@ -172,6 +300,28 @@ const AgendarAula = ({ professor, onClose, onSuccess }) => {
             <div className="professor-info">
               <h3>Professor: {professor.nome}</h3>
               {professor.email && <p>{professor.email}</p>}
+              <div style={{ marginTop: 8 }}>
+                {profHasTokens ? (
+                  <small style={{ color: '#059669' }}>Google Calendar conectado</small>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleManualConnect}
+                    style={{
+                      marginTop: 8,
+                      padding: '6px 10px',
+                      borderRadius: 6,
+                      border: '1px solid #0A66C2',
+                      background: 'white',
+                      color: '#0A66C2',
+                      cursor: 'pointer'
+                    }}
+                    disabled={agendando}
+                  >
+                    Conectar Google Calendar
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -280,4 +430,3 @@ const AgendarAula = ({ professor, onClose, onSuccess }) => {
 };
 
 export default AgendarAula;
-
