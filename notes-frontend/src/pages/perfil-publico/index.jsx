@@ -82,6 +82,20 @@ export default function PerfilPublico() {
         // extras para professor: estatísticas e avaliações
         if (isProfessor && data._id) {
           try {
+            // Função auxiliar para normalizar IDs (garantir comparação correta)
+            const normalizarId = (id) => {
+              if (!id) return null;
+              // Se for objeto, extrair o ID
+              if (typeof id === 'object') {
+                return id._id || id.id || id.$oid || String(id);
+              }
+              // Converter para string para comparação
+              return String(id);
+            };
+
+            // Normalizar o ID do professor do perfil para comparação
+            const professorIdNormalizado = normalizarId(data._id);
+
             // Buscar avaliações e estatísticas em paralelo
             const [stats, avaliacoesList] = await Promise.all([
               getEstatisticasProfessor(data._id).catch(() => null),
@@ -89,29 +103,60 @@ export default function PerfilPublico() {
             ]);
             
             const avaliacoesArray = Array.isArray(avaliacoesList) ? avaliacoesList : [];
-            setAvaliacoes(avaliacoesArray);
+            
+            // Filtrar avaliações para garantir que sejam apenas do professor do perfil
+            const avaliacoesFiltradas = avaliacoesArray.filter(av => {
+              // Tentar diferentes formatos do campo id_prof da avaliação
+              const avProfId = av.id_prof?._id || av.id_prof?.id || av.id_prof || 
+                              av.professor?._id || av.professor?.id || av.professor ||
+                              av.id_professor?._id || av.id_professor?.id || av.id_professor;
+              const avProfIdNormalizado = normalizarId(avProfId);
+              
+              // Só incluir se o ID do professor da avaliação corresponder ao professor do perfil
+              const pertenceAoProfessor = avProfIdNormalizado !== null && 
+                                          professorIdNormalizado !== null && 
+                                          avProfIdNormalizado === professorIdNormalizado;
+              
+              if (!pertenceAoProfessor && avProfId) {
+                console.warn('[perfil-publico] Avaliação filtrada - não pertence ao professor:', {
+                  avaliacaoId: av._id || av.id,
+                  profIdAvaliacao: avProfIdNormalizado,
+                  profIdPerfil: professorIdNormalizado
+                });
+              }
+              
+              return pertenceAoProfessor;
+            });
+            
+            console.log('[perfil-publico] Total de avaliações recebidas do backend:', avaliacoesArray.length);
+            console.log('[perfil-publico] Total de avaliações filtradas:', avaliacoesFiltradas.length);
+            
+            setAvaliacoes(avaliacoesFiltradas);
             
             // Se as estatísticas vierem do backend, usar; senão calcular manualmente
             const mediaFromStats = stats?.media || stats?.nota_media || stats?.media_notas || null;
             if (stats && mediaFromStats !== undefined && mediaFromStats !== null) {
               setStatsAvaliacoes({
                 media: Number(mediaFromStats) || 0,
-                total: stats.total || stats.total_avaliacoes || avaliacoesArray.length || 0,
+                total: stats.total || stats.total_avaliacoes || avaliacoesFiltradas.length || 0,
                 nota_min: stats.nota_min || stats.min || null,
                 nota_max: stats.nota_max || stats.max || null
               });
-            } else if (avaliacoesArray.length > 0) {
-              const somaNotas = avaliacoesArray.reduce((acc, av) => {
+
+            } else if (avaliacoesFiltradas.length > 0) {
+              // Calcular média manualmente usando apenas as avaliações filtradas (do professor correto)
+              const somaNotas = avaliacoesFiltradas.reduce((acc, av) => {
+
                 const nota = Number(av.nota) || 0;
                 return acc + nota;
               }, 0);
-              const media = somaNotas / avaliacoesArray.length;
+              const media = somaNotas / avaliacoesFiltradas.length;
               
               setStatsAvaliacoes({
                 media: media,
-                total: avaliacoesArray.length,
-                nota_min: Math.min(...avaliacoesArray.map(av => Number(av.nota) || 0)),
-                nota_max: Math.max(...avaliacoesArray.map(av => Number(av.nota) || 0))
+                total: avaliacoesFiltradas.length,
+                nota_min: Math.min(...avaliacoesFiltradas.map(av => Number(av.nota) || 0)),
+                nota_max: Math.max(...avaliacoesFiltradas.map(av => Number(av.nota) || 0))
               });
             } else {
               setStatsAvaliacoes({
