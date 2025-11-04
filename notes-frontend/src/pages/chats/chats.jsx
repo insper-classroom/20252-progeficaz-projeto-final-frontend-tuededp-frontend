@@ -481,10 +481,18 @@ useEffect(() => {
                         <div className="title-row">
                           <strong
                             onClick={(e) => goToProfile(e, other?.id, other?.tipo)}
-                            style={{ cursor: "pointer", textDecoration: "underline" }}
+                            className="user-name-link"
+                            role="link"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                goToProfile(e, other?.id, other?.tipo);
+                              }
+                            }}
                             title="Ver perfil"
                           >
-                            {name}
+                            {other?.nome}
                           </strong>
                           {badge && <span className="role">{badge}</span>}
                           <time>
@@ -529,10 +537,18 @@ useEffect(() => {
                           <div className="title-row">
                             <strong
                               onClick={(e) => goToProfile(e, other?.id, other?.tipo)}
-                              style={{ cursor: "pointer", textDecoration: "underline" }}
+                              className="user-name-link"
+                              role="link"
+                              tabIndex={0}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  goToProfile(e, other?.id, other?.tipo);
+                                }
+                              }}
                               title="Ver perfil"
                             >
-                              {name}
+                              {other?.nome}
                             </strong>
                             {badge && <span className="role">{badge}</span>}
                           </div>

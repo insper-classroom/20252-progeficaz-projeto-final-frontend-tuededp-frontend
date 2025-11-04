@@ -251,3 +251,22 @@ html, body, #root { height: 100%; }
   text-overflow:ellipsis !important;
   white-space:nowrap !important;
 }
+/* nome clicável na lista de chats */
+.page-chats .user-name-link{
+  cursor: pointer;
+  text-decoration: none;   /* tira a linha */
+  color: inherit;          /* cor normal do texto */
+  font-weight: 700;        /* mantém o destaque do nome */
+}
+
+/* só no hover fica azul pra indicar que é link */
+.page-chats .user-name-link:hover{
+  color: #1E40AF;
+}
+
+/* acessível no teclado */
+.page-chats .user-name-link:focus-visible{
+  outline: 2px solid rgba(30, 64, 175, .35);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
