@@ -91,7 +91,7 @@
   justify-content: center;
   gap: 16px;
   padding: 32px 24px;
-  background: var(--surface);
+  background: var(--surface) !important;
   border: 2px solid var(--line);
   border-radius: 20px;
   text-align: center;
@@ -104,7 +104,7 @@
   border-color: var(--brand);
   box-shadow: 0 12px 32px rgba(10, 102, 194, 0.12);
   transform: translateY(-4px);
-  background: linear-gradient(135deg, rgba(10, 102, 194, 0.02) 0%, rgba(10, 102, 194, 0.05) 100%);
+  background: var(--surface) !important;
 }
 
 .subject:active{
@@ -124,20 +124,27 @@
   align-items: center;
   justify-content: center;
   border-radius: 16px;
-  background: linear-gradient(135deg, rgba(10, 102, 194, 0.1) 0%, rgba(10, 102, 194, 0.15) 100%);
+  background: transparent !important;
   transition: all 0.3s ease;
-  color: var(--brand);
+  color: var(--brand) !important;
 }
 
 .subject__icon svg {
   width: 32px;
   height: 32px;
+  color: var(--brand) !important;
+  fill: none;
+  stroke: currentColor;
 }
 
 .subject:hover .subject__icon{
-  background: linear-gradient(135deg, rgba(10, 102, 194, 0.15) 0%, rgba(10, 102, 194, 0.25) 100%);
+  background: transparent !important;
   transform: scale(1.1);
-  color: var(--brand);
+  color: var(--brand) !important;
+}
+
+.subject:hover .subject__icon svg {
+  color: var(--brand) !important;
 }
 
 .subject__name{

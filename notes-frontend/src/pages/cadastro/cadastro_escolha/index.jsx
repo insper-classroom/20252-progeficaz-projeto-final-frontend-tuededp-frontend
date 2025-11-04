@@ -4,6 +4,22 @@ import HeaderDeslogado from "../../../components/header-deslogado";
 import Footer from "../../../components/footer";
 import "./index.css";
 
+// Ícones SVG
+const IconAluno = () => (
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+    <circle cx="12" cy="7" r="4"/>
+  </svg>
+);
+
+const IconProfessor = () => (
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+    <circle cx="9" cy="7" r="4"/>
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </svg>
+);
 
 export default function CadastroEscolha() {
   const navigate = useNavigate();
@@ -13,41 +29,38 @@ export default function CadastroEscolha() {
       <HeaderDeslogado />
 
       <main className="choice-main">
-        <section className="choice-card" aria-labelledby="title-cadastro">
-          <div className="choice-head">
-            <h1 id="title-cadastro">Criar conta</h1>
-            <p>Escolha o tipo de conta que deseja criar.</p>
-          </div>
+        <section className="choice-section" aria-labelledby="title-cadastro">
+          <header className="choice-header">
+            <h1 id="title-cadastro" className="choice-title">Criar conta</h1>
+            <p className="choice-subtitle">Escolha o tipo de conta que deseja criar.</p>
+          </header>
 
           <div className="choice-grid" role="list">
             <button
-              className="choice-option"
+              className="choice-card"
               onClick={() => navigate("/cadastro-aluno")}
               aria-label="Cadastrar como aluno"
               type="button"
             >
-              <div className="choice-badge" style={{ background: "#3b82f6" }}>A</div>
-              <div>
-                <p className="choice-title">Aluno</p>
-                <p className="choice-desc">Acesso a cursos, trilhas e avaliações.</p>
-              </div>
+              <span className="choice-icon" aria-hidden>
+                <IconAluno />
+              </span>
+              <span className="choice-name">Aluno</span>
             </button>
 
             <button
-              className="choice-option"
+              className="choice-card"
               onClick={() => navigate("/cadastro-professor")}
               aria-label="Cadastrar como professor"
               type="button"
             >
-              <div className="choice-badge" style={{ background: "#0A66C2" }}>P</div>
-              <div>
-                <p className="choice-title">Professor</p>
-                <p className="choice-desc">Crie e gerencie cursos e aulas.</p>
-              </div>
+              <span className="choice-icon" aria-hidden>
+                <IconProfessor />
+              </span>
+              <span className="choice-name">Professor</span>
             </button>
           </div>
 
-          {/* Meta: 'Já tem conta? Entrar' — Entrar é link simples com underline no hover */}
           <div className="choice-meta">
             Já tem conta?{" "}
             <a
@@ -62,14 +75,6 @@ export default function CadastroEscolha() {
             </a>
           </div>
         </section>
-
-        {/* opção visual escondida por padrão (mantive estrutura) */}
-        <aside className="choice-figure" aria-hidden="true">
-          <div className="figure-card">
-            <h3>Aprenda e ensine no seu ritmo</h3>
-            <p>Trilhas, aulas curtas, certificados, professores verificados e oportunidades para ensinar.</p>
-          </div>
-        </aside>
       </main>
 
       <Footer />
