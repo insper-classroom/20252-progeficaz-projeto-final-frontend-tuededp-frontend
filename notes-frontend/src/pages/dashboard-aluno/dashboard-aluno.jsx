@@ -36,6 +36,20 @@ const DashboardAluno = () => {
 
       const token = getToken();
       
+      // Função auxiliar para normalizar IDs (garantir comparação correta)
+      const normalizarId = (id) => {
+        if (!id) return null;
+        // Se for objeto, extrair o ID
+        if (typeof id === 'object') {
+          return id._id || id.id || id.$oid || String(id);
+        }
+        // Converter para string para comparação
+        return String(id);
+      };
+
+      // Normalizar o ID do aluno logado para comparação
+      const alunoIdNormalizado = normalizarId(alunoId);
+      
       // Buscar agendamentos e avaliações em paralelo
       const [resAgenda, avaliacoesData] = await Promise.all([
         fetch(`${API}/agenda?aluno=${alunoId}`, {
@@ -64,9 +78,76 @@ const DashboardAluno = () => {
 
               if (aulaResponse.ok) {
                 const aulaData = await aulaResponse.json();
+                
+                // Função auxiliar para extrair ID do professor de diferentes formatos
+                const extrairIdProfessor = (prof) => {
+                  if (!prof) return null;
+                  if (typeof prof === 'string') return prof;
+                  if (typeof prof === 'object') {
+                    return prof._id || prof.id || prof.$oid || null;
+                  }
+                  return null;
+                };
+                
+                // Tentar obter dados do professor de várias fontes
+                let professorData = agendamento.professor || aulaData.professor || aulaData.id_prof || 
+                                  aulaData.id_professor || aulaData.professor_id || null;
+                
+                // Extrair ID do professor se necessário
+                let profId = null;
+                if (professorData) {
+                  if (typeof professorData === 'string') {
+                    // Professor veio apenas como string ID
+                    profId = professorData;
+                    professorData = null;
+                  } else if (typeof professorData === 'object' && !professorData.nome) {
+                    // Professor veio como objeto mas sem nome (apenas ID)
+                    profId = extrairIdProfessor(professorData);
+                    professorData = null;
+                  } else if (typeof professorData === 'object' && professorData.nome) {
+                    // Professor já veio com dados completos
+                    return {
+                      ...agendamento,
+                      aula: aulaData,
+                      professor: professorData,
+                    };
+                  }
+                }
+                
+                // Se não temos dados completos, buscar pelo ID
+                if (!professorData && profId) {
+                  try {
+                    const profResponse = await fetch(`${API}/professores/${profId}`, {
+                      headers: {
+                        Authorization: `Bearer ${token}`,
+                      },
+                    });
+                    if (profResponse.ok) {
+                      professorData = await profResponse.json();
+                      console.log('[dashboard-aluno] Dados do professor buscados:', professorData);
+                    } else {
+                      console.warn('[dashboard-aluno] Erro ao buscar professor:', profResponse.status);
+                    }
+                  } catch (err) {
+                    console.warn('[dashboard-aluno] Erro ao buscar dados do professor:', err);
+                  }
+                }
+                
+                // Log para debug
+                if (!professorData || !professorData.nome) {
+                  console.warn('[dashboard-aluno] Professor não encontrado para agendamento:', {
+                    agendamentoId: agendamento._id || agendamento.id,
+                    aulaId: aulaId,
+                    professorData: professorData,
+                    profId: profId,
+                    aulaData: aulaData
+                  });
+                }
+                
                 return {
                   ...agendamento,
                   aula: aulaData,
+                  professor: professorData,
                 };
               }
             } catch (err) {
@@ -78,34 +159,215 @@ const DashboardAluno = () => {
       );
       
       setAgendamentos(agendamentosCompletos);
-      setAvaliacoes(Array.isArray(avaliacoesData) ? avaliacoesData : []);
+      
+      // Filtrar avaliações para garantir que sejam apenas do aluno logado
+      const avaliacoesArray = Array.isArray(avaliacoesData) ? avaliacoesData : [];
+      const avaliacoesFiltradas = avaliacoesArray.filter(av => {
+        // Tentar diferentes formatos do campo id_aluno da avaliação
+        const avAlunoId = av.id_aluno?._id || av.id_aluno?.id || av.id_aluno || 
+                         av.aluno?._id || av.aluno?.id || av.aluno;
+        const avAlunoIdNormalizado = normalizarId(avAlunoId);
+        
+        // Só incluir se o ID do aluno da avaliação corresponder ao aluno logado
+        const pertenceAoAluno = avAlunoIdNormalizado !== null && 
+                                alunoIdNormalizado !== null && 
+                                avAlunoIdNormalizado === alunoIdNormalizado;
+        
+        if (!pertenceAoAluno && avAlunoId) {
+          console.warn('[dashboard-aluno] Avaliação filtrada - não pertence ao aluno:', {
+            avaliacaoId: av._id || av.id,
+            alunoIdAvaliacao: avAlunoIdNormalizado,
+            alunoIdLogado: alunoIdNormalizado
+          });
+        }
+        
+        return pertenceAoAluno;
+      });
+      
+      // Buscar dados completos do professor e da aula para cada avaliação
+      const avaliacoesCompletas = await Promise.all(
+        avaliacoesFiltradas.map(async (avaliacao) => {
+          // Função auxiliar para extrair ID do professor de diferentes formatos
+          const extrairIdProfessor = (prof) => {
+            if (!prof) return null;
+            if (typeof prof === 'string') return prof;
+            if (typeof prof === 'object') {
+              return prof._id || prof.id || prof.$oid || null;
+            }
+            return null;
+          };
+
+          // Função auxiliar para extrair ID da aula
+          const extrairIdAula = (aula) => {
+            if (!aula) return null;
+            if (typeof aula === 'string') return aula;
+            if (typeof aula === 'object') {
+              return aula._id || aula.id || aula.$oid || null;
+            }
+            return null;
+          };
+
+          // Tentar obter dados do professor de várias fontes
+          let professorData = avaliacao.professor || avaliacao.id_prof || 
+                            avaliacao.id_professor || avaliacao.professor_id || null;
+          
+          // Extrair ID do professor se necessário
+          let profId = null;
+          if (professorData) {
+            if (typeof professorData === 'string') {
+              // Professor veio apenas como string ID
+              profId = professorData;
+              professorData = null;
+            } else if (typeof professorData === 'object' && !professorData.nome) {
+              // Professor veio como objeto mas sem nome (apenas ID)
+              profId = extrairIdProfessor(professorData);
+              professorData = null;
+            } else if (typeof professorData === 'object' && professorData.nome) {
+              // Professor já veio com dados completos
+              // Não fazer nada, já temos os dados
+            }
+          }
+
+          // Se não temos dados completos do professor, buscar pelo ID
+          if (!professorData && profId) {
+            try {
+              const profResponse = await fetch(`${API}/professores/${profId}`, {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              });
+              if (profResponse.ok) {
+                professorData = await profResponse.json();
+                console.log('[dashboard-aluno] Dados do professor buscados para avaliação:', professorData);
+              } else {
+                console.warn('[dashboard-aluno] Erro ao buscar professor para avaliação:', profResponse.status);
+              }
+            } catch (err) {
+              console.warn('[dashboard-aluno] Erro ao buscar dados do professor para avaliação:', err);
+            }
+          }
+
+          // Tentar obter dados da aula de várias fontes
+          let aulaData = avaliacao.aula || avaliacao.id_aula || null;
+
+          // Extrair ID da aula se necessário
+          let aulaId = null;
+          if (aulaData) {
+            if (typeof aulaData === 'string') {
+              // Aula veio apenas como string ID
+              aulaId = aulaData;
+              aulaData = null;
+            } else if (typeof aulaData === 'object' && !aulaData.titulo) {
+              // Aula veio como objeto mas sem título (apenas ID)
+              aulaId = extrairIdAula(aulaData);
+              aulaData = null;
+            } else if (typeof aulaData === 'object' && aulaData.titulo) {
+              // Aula já veio com dados completos
+              // Verificar se tem professor dentro da aula
+              if (!professorData && aulaData.professor) {
+                const aulaProfId = extrairIdProfessor(aulaData.professor || aulaData.id_prof);
+                if (aulaProfId && typeof aulaData.professor === 'object' && aulaData.professor.nome) {
+                  professorData = aulaData.professor;
+                } else if (aulaProfId) {
+                  // Tentar buscar professor da aula
+                  try {
+                    const profResponse = await fetch(`${API}/professores/${aulaProfId}`, {
+                      headers: {
+                        Authorization: `Bearer ${token}`,
+                      },
+                    });
+                    if (profResponse.ok) {
+                      professorData = await profResponse.json();
+                      console.log('[dashboard-aluno] Dados do professor buscados da aula:', professorData);
+                    }
+                  } catch (err) {
+                    console.warn('[dashboard-aluno] Erro ao buscar professor da aula:', err);
+                  }
+                }
+              }
+              // Não fazer nada, já temos os dados
+            }
+          }
+
+          // Se não temos dados completos da aula, buscar pelo ID
+          if (!aulaData && aulaId) {
+            try {
+              const aulaResponse = await fetch(`${API}/aulas/${aulaId}`, {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              });
+              if (aulaResponse.ok) {
+                aulaData = await aulaResponse.json();
+                console.log('[dashboard-aluno] Dados da aula buscados para avaliação:', aulaData);
+                
+                // Se não temos dados do professor ainda, tentar pegar da aula
+                if (!professorData && aulaData.professor) {
+                  const aulaProfId = extrairIdProfessor(aulaData.professor || aulaData.id_prof);
+                  if (aulaProfId && typeof aulaData.professor === 'object' && aulaData.professor.nome) {
+                    professorData = aulaData.professor;
+                  } else if (aulaProfId) {
+                    // Tentar buscar professor da aula
+                    try {
+                      const profResponse = await fetch(`${API}/professores/${aulaProfId}`, {
+                        headers: {
+                          Authorization: `Bearer ${token}`,
+                        },
+                      });
+                      if (profResponse.ok) {
+                        professorData = await profResponse.json();
+                        console.log('[dashboard-aluno] Dados do professor buscados da aula:', professorData);
+                      }
+                    } catch (err) {
+                      console.warn('[dashboard-aluno] Erro ao buscar professor da aula:', err);
+                    }
+                  }
+                }
+              } else {
+                console.warn('[dashboard-aluno] Erro ao buscar aula para avaliação:', aulaResponse.status);
+              }
+            } catch (err) {
+              console.warn('[dashboard-aluno] Erro ao buscar dados da aula para avaliação:', err);
+            }
+          }
+
+          // Log para debug se não encontrou dados
+          if (!professorData || !professorData.nome) {
+            console.warn('[dashboard-aluno] Professor não encontrado para avaliação:', {
+              avaliacaoId: avaliacao._id || avaliacao.id,
+              professorData: professorData,
+              profId: profId,
+              aulaData: aulaData
+            });
+          }
+
+          return {
+            ...avaliacao,
+            professor: professorData,
+            aula: aulaData,
+          };
+        })
+      );
+      
+      setAvaliacoes(avaliacoesCompletas);
 
       console.log('[dashboard-aluno] Agendamentos carregados:', agendamentosCompletos.length);
-      console.log('[dashboard-aluno] Avaliações carregadas:', Array.isArray(avaliacoesData) ? avaliacoesData.length : 0);
-      console.log('[dashboard-aluno] Dados de avaliações:', avaliacoesData);
+      console.log('[dashboard-aluno] Avaliações carregadas (filtradas):', avaliacoesFiltradas.length);
+      console.log('[dashboard-aluno] Avaliações completas (com dados de professor/aula):', avaliacoesCompletas.length);
+      console.log('[dashboard-aluno] Avaliações totais recebidas do backend:', avaliacoesArray.length);
+      console.log('[dashboard-aluno] Dados de avaliações completas:', avaliacoesCompletas);
 
       const agora = new Date();
-      
-      // Função auxiliar para normalizar IDs (garantir comparação correta)
-      const normalizarId = (id) => {
-        if (!id) return null;
-        // Se for objeto, extrair o ID
-        if (typeof id === 'object') {
-          return id._id || id.id || id.$oid || String(id);
-        }
-        // Converter para string para comparação
-        return String(id);
-      };
 
       // Identificar aulas concluídas que ainda não foram avaliadas
+      // Usar avaliacoesCompletas para garantir que só considere avaliações do aluno logado
       const idsAvaliadas = new Set(
-        (Array.isArray(avaliacoesData) ? avaliacoesData : [])
-          .map(av => {
-            // Tentar diferentes formatos do campo id_aula
-            const aulaId = av.id_aula?._id || av.id_aula?.id || av.id_aula || av.aula?._id || av.aula?.id;
-            return normalizarId(aulaId);
-          })
-          .filter(id => id !== null) // Remover nulls
+        avaliacoesCompletas.map(av => {
+          // Tentar diferentes formatos do campo id_aula
+          const aulaId = av.id_aula?._id || av.id_aula?.id || av.id_aula || av.aula?._id || av.aula?.id;
+          return normalizarId(aulaId);
+        })
+        .filter(id => id !== null) // Remover nulls
       );
       
       console.log('[dashboard-aluno] IDs de aulas já avaliadas:', Array.from(idsAvaliadas));
@@ -321,12 +583,33 @@ const DashboardAluno = () => {
                                        statusLower === 'concluída' || 
                                        statusLower.includes('conclu');
                   
+                  // Buscar nome do professor em vários lugares possíveis
+                  let professorNome = a.professor?.nome || 
+                                     a.aula?.professor?.nome || 
+                                     a.aula?.id_prof?.nome ||
+                                     a.aula?.id_professor?.nome ||
+                                     a.aula?.professor_id?.nome ||
+                                     a.id_prof?.nome ||
+                                     null;
+                  
+                  // Se não encontrou nome, log para debug
+                  if (!professorNome) {
+                    console.warn('[dashboard-aluno] Nome do professor não encontrado para agendamento:', {
+                      agendamentoId: agendamentoId,
+                      professor: a.professor,
+                      aula: a.aula,
+                      id_prof: a.id_prof
+                    });
+                  }
+                  
+                  professorNome = professorNome || '-';
+                  
                   return (
                     <tr key={agendamentoId}>
                       <td>
                         <strong>{a.aula?.titulo || '-'}</strong>
                       </td>
-                      <td>{a.professor?.nome || a.aula?.professor?.nome || '-'}</td>
+                      <td>{professorNome}</td>
                       <td>{formatData(a.data_hora)}</td>
                       <td>
                         <Badge status={a.status} />
@@ -365,12 +648,42 @@ const DashboardAluno = () => {
             <div className="aval-list">
               {avaliacoes.map(av => {
                 const avId = av._id || av.id;
+                
+                // Buscar nome do professor em vários lugares possíveis
+                let professorNome = av.professor?.nome || 
+                                   av.id_prof?.nome ||
+                                   av.id_professor?.nome ||
+                                   av.professor_id?.nome ||
+                                   av.aula?.professor?.nome ||
+                                   av.aula?.id_prof?.nome ||
+                                   av.aula?.id_professor?.nome ||
+                                   av.aula?.professor_id?.nome ||
+                                   null;
+                
+                // Buscar título da aula em vários lugares possíveis
+                let aulaTitulo = av.aula?.titulo || 
+                                av.id_aula?.titulo ||
+                                null;
+                
+                // Se não encontrou nome, log para debug
+                if (!professorNome) {
+                  console.warn('[dashboard-aluno] Nome do professor não encontrado para avaliação:', {
+                    avaliacaoId: avId,
+                    professor: av.professor,
+                    id_prof: av.id_prof,
+                    aula: av.aula
+                  });
+                }
+                
+                professorNome = professorNome || 'N/A';
+                aulaTitulo = aulaTitulo || 'Aula';
+                
                 return (
                   <div key={avId} className="aval-card">
                     <div className="aval-header">
                       <div>
-                        <h3>{av.aula?.titulo || av.id_aula?.titulo || 'Aula'}</h3>
-                        <p className="prof">Prof. {av.professor?.nome || av.id_prof?.nome || 'N/A'}</p>
+                        <h3>{aulaTitulo}</h3>
+                        <p className="prof">Prof. {professorNome}</p>
                       </div>
                       <div className="nota-badge">
                         <span className="nota-val">{av.nota?.toFixed(1) || '0.0'}</span>/10

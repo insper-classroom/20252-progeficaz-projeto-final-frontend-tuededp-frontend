@@ -82,13 +82,54 @@ export default function PerfilPublico() {
         // extras para professor: estatísticas e avaliações
         if (isProfessor && data._id) {
           try {
-            const stats = await getEstatisticasProfessor(data._id);
-            setStatsAvaliacoes(stats);
-            const avaliacoesList = await listarAvaliacoes({ id_prof: data._id });
-            setAvaliacoes(Array.isArray(avaliacoesList) ? avaliacoesList : []);
+            // Buscar avaliações e estatísticas em paralelo
+            const [stats, avaliacoesList] = await Promise.all([
+              getEstatisticasProfessor(data._id).catch(() => null),
+              listarAvaliacoes({ id_prof: data._id }).catch(() => [])
+            ]);
+            
+            const avaliacoesArray = Array.isArray(avaliacoesList) ? avaliacoesList : [];
+            setAvaliacoes(avaliacoesArray);
+            
+            // Se as estatísticas vierem do backend, usar; senão calcular manualmente
+            // Verificar diferentes formatos possíveis de resposta da API
+            const mediaFromStats = stats?.media || stats?.nota_media || stats?.media_notas || null;
+            if (stats && mediaFromStats !== undefined && mediaFromStats !== null) {
+              // Normalizar os dados das estatísticas
+              setStatsAvaliacoes({
+                media: Number(mediaFromStats) || 0,
+                total: stats.total || stats.total_avaliacoes || avaliacoesArray.length || 0,
+                nota_min: stats.nota_min || stats.min || null,
+                nota_max: stats.nota_max || stats.max || null
+              });
+            } else if (avaliacoesArray.length > 0) {
+              // Calcular média manualmente
+              const somaNotas = avaliacoesArray.reduce((acc, av) => {
+                const nota = Number(av.nota) || 0;
+                return acc + nota;
+              }, 0);
+              const media = somaNotas / avaliacoesArray.length;
+              
+              setStatsAvaliacoes({
+                media: media,
+                total: avaliacoesArray.length,
+                nota_min: Math.min(...avaliacoesArray.map(av => Number(av.nota) || 0)),
+                nota_max: Math.max(...avaliacoesArray.map(av => Number(av.nota) || 0))
+              });
+            } else {
+              // Não há avaliações
+              setStatsAvaliacoes({
+                media: 0,
+                total: 0
+              });
+            }
           } catch (e) {
             console.error("[perfil-publico] Erro ao buscar avaliações:", e);
             setAvaliacoes([]);
+            setStatsAvaliacoes({
+              media: 0,
+              total: 0
+            });
           }
         }
       } catch (e) {
@@ -185,15 +226,17 @@ export default function PerfilPublico() {
           {isProfessor && (
             <section className="pp-card">
               <h3>Avaliações</h3>
-              {statsAvaliacoes ? (
+              {statsAvaliacoes && statsAvaliacoes.total > 0 ? (
                 <div className="pp-avaliacoes">
                   <div className="pp-avaliacao-media">
                     <span className="pp-avaliacao-numero">
-                      {statsAvaliacoes.media ? statsAvaliacoes.media.toFixed(1) : "N/A"}
+                      {statsAvaliacoes.media !== undefined && statsAvaliacoes.media !== null 
+                        ? statsAvaliacoes.media.toFixed(1) 
+                        : "0.0"}
                     </span>
                     <span className="pp-avaliacao-max">/ 10</span>
                   </div>
-                  {statsAvaliacoes.total && (
+                  {statsAvaliacoes.total > 0 && (
                     <p className="pp-avaliacao-total">
                       {statsAvaliacoes.total} avaliação{statsAvaliacoes.total !== 1 ? "ões" : ""}
                     </p>

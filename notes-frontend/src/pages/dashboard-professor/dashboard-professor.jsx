@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import HeaderLogado from '../../components/header-logado';
 import Footer from '../../components/footer';
-import { requireAuth, getUser } from '../../services/authService';
+import { requireAuth, getUser, getToken } from '../../services/authService';
 import { buscarAgendamentosProfessor, buscarAvaliacoesProfessor, buscarStatsProfessor, atualizarStatusAgendamento } from '../../services/apiService';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import './dashboard-professor.css';
@@ -59,15 +59,131 @@ const DashboardProfessor = () => {
     setLoading(true);
     setErro(null);
     try {
+      const token = getToken();
+      const API = '/api';
 
       // Buscar agendamentos
       const agendamentosRes = await buscarAgendamentosProfessor(professorId);
       if (agendamentosRes.success && agendamentosRes.data) {
-        setAgendamentos(agendamentosRes.data);
+        // Buscar dados completos de aluno e aula para cada agendamento
+        const agendamentosCompletos = await Promise.all(
+          agendamentosRes.data.map(async (agendamento) => {
+            // Função auxiliar para extrair ID
+            const extrairId = (obj) => {
+              if (!obj) return null;
+              if (typeof obj === 'string') return obj;
+              if (typeof obj === 'object') {
+                return obj._id || obj.id || obj.$oid || null;
+              }
+              return null;
+            };
+
+            let alunoData = agendamento.aluno || agendamento.id_aluno || null;
+            let aulaData = agendamento.aula || agendamento.id_aula || null;
+
+            // Buscar dados completos do aluno se necessário
+            let alunoId = null;
+            if (alunoData) {
+              if (typeof alunoData === 'string') {
+                // Aluno veio apenas como string ID
+                alunoId = alunoData;
+                alunoData = null;
+              } else if (typeof alunoData === 'object' && !alunoData.nome) {
+                // Aluno veio como objeto mas sem nome (apenas ID)
+                alunoId = extrairId(alunoData);
+                alunoData = null;
+              } else if (typeof alunoData === 'object' && alunoData.nome) {
+                // Aluno já veio com dados completos - não fazer nada
+                alunoId = null;
+              }
+            }
+
+            // Se não temos dados completos do aluno, buscar pelo ID
+            if (!alunoData && alunoId) {
+              try {
+                const alunoResponse = await fetch(`${API}/alunos/${alunoId}`, {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                });
+                if (alunoResponse.ok) {
+                  alunoData = await alunoResponse.json();
+                  console.log('[dashboard-professor] Dados do aluno buscados:', alunoData);
+                } else {
+                  console.warn('[dashboard-professor] Erro ao buscar aluno:', alunoResponse.status);
+                }
+              } catch (err) {
+                console.warn('[dashboard-professor] Erro ao buscar dados do aluno:', err);
+              }
+            }
+
+            // Buscar dados completos da aula se necessário
+            let aulaId = null;
+            if (aulaData) {
+              if (typeof aulaData === 'string') {
+                // Aula veio apenas como string ID
+                aulaId = aulaData;
+                aulaData = null;
+              } else if (typeof aulaData === 'object' && !aulaData.titulo) {
+                // Aula veio como objeto mas sem título (apenas ID)
+                aulaId = extrairId(aulaData);
+                aulaData = null;
+              } else if (typeof aulaData === 'object' && aulaData.titulo) {
+                // Aula já veio com dados completos - não fazer nada
+                aulaId = null;
+              }
+            }
+
+            // Se não temos dados completos da aula, buscar pelo ID
+            if (!aulaData && aulaId) {
+              try {
+                const aulaResponse = await fetch(`${API}/aulas/${aulaId}`, {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                });
+                if (aulaResponse.ok) {
+                  aulaData = await aulaResponse.json();
+                  console.log('[dashboard-professor] Dados da aula buscados:', aulaData);
+                } else {
+                  console.warn('[dashboard-professor] Erro ao buscar aula:', aulaResponse.status);
+                }
+              } catch (err) {
+                console.warn('[dashboard-professor] Erro ao buscar dados da aula:', err);
+              }
+            }
+
+            // Log para debug se não encontrou dados
+            if (!alunoData || !alunoData.nome) {
+              console.warn('[dashboard-professor] Aluno não encontrado para agendamento:', {
+                agendamentoId: agendamento._id || agendamento.id,
+                alunoData: alunoData,
+                alunoId: alunoId || extrairId(agendamento.aluno || agendamento.id_aluno),
+                alunoOriginal: agendamento.aluno || agendamento.id_aluno
+              });
+            }
+            if (!aulaData || !aulaData.titulo) {
+              console.warn('[dashboard-professor] Aula não encontrada para agendamento:', {
+                agendamentoId: agendamento._id || agendamento.id,
+                aulaData: aulaData,
+                aulaId: aulaId || extrairId(agendamento.aula || agendamento.id_aula),
+                aulaOriginal: agendamento.aula || agendamento.id_aula
+              });
+            }
+
+            return {
+              ...agendamento,
+              aluno: alunoData,
+              aula: aulaData,
+            };
+          })
+        );
+
+        setAgendamentos(agendamentosCompletos);
         
         // Extrair alunos únicos
         const alunosMap = new Map();
-        agendamentosRes.data.forEach(agendamento => {
+        agendamentosCompletos.forEach(agendamento => {
           if (agendamento.aluno) {
             const alunoId = agendamento.aluno.id || agendamento.aluno._id;
             if (alunoId && !alunosMap.has(alunoId)) {
@@ -87,17 +203,56 @@ const DashboardProfessor = () => {
         setAgendamentos([]);
       }
 
+      // Função auxiliar para normalizar IDs (garantir comparação correta)
+      const normalizarId = (id) => {
+        if (!id) return null;
+        // Se for objeto, extrair o ID
+        if (typeof id === 'object') {
+          return id._id || id.id || id.$oid || String(id);
+        }
+        // Converter para string para comparação
+        return String(id);
+      };
+
+      // Normalizar o ID do professor logado para comparação
+      const professorIdNormalizado = normalizarId(professorId);
+
       // Buscar avaliações
       console.log('[dashboard-professor] Buscando avaliações para professor:', professorId);
       const avaliacoesRes = await buscarAvaliacoesProfessor(professorId);
       console.log('[dashboard-professor] Resposta de avaliações:', avaliacoesRes);
-      if (avaliacoesRes.success && avaliacoesRes.data) {
-        console.log('[dashboard-professor] Total de avaliações encontradas:', avaliacoesRes.data.length);
-        setAvaliacoes(avaliacoesRes.data);
-      } else {
-        console.warn('[dashboard-professor] Nenhuma avaliação encontrada:', avaliacoesRes.error);
-        setAvaliacoes([]);
-      }
+      
+      // Filtrar avaliações para garantir que sejam apenas do professor logado
+      const avaliacoesArray = avaliacoesRes.success && avaliacoesRes.data 
+        ? (Array.isArray(avaliacoesRes.data) ? avaliacoesRes.data : [])
+        : [];
+      
+      const avaliacoesFiltradas = avaliacoesArray.filter(av => {
+        // Tentar diferentes formatos do campo id_prof da avaliação
+        const avProfId = av.id_prof?._id || av.id_prof?.id || av.id_prof || 
+                        av.professor?._id || av.professor?.id || av.professor ||
+                        av.id_professor?._id || av.id_professor?.id || av.id_professor;
+        const avProfIdNormalizado = normalizarId(avProfId);
+        
+        // Só incluir se o ID do professor da avaliação corresponder ao professor logado
+        const pertenceAoProfessor = avProfIdNormalizado !== null && 
+                                    professorIdNormalizado !== null && 
+                                    avProfIdNormalizado === professorIdNormalizado;
+        
+        if (!pertenceAoProfessor && avProfId) {
+          console.warn('[dashboard-professor] Avaliação filtrada - não pertence ao professor:', {
+            avaliacaoId: av._id || av.id,
+            profIdAvaliacao: avProfIdNormalizado,
+            profIdLogado: professorIdNormalizado
+          });
+        }
+        
+        return pertenceAoProfessor;
+      });
+      
+      console.log('[dashboard-professor] Total de avaliações recebidas do backend:', avaliacoesArray.length);
+      console.log('[dashboard-professor] Total de avaliações filtradas:', avaliacoesFiltradas.length);
+      setAvaliacoes(avaliacoesFiltradas);
 
       // Buscar estatísticas
       console.log('[dashboard-professor] Buscando estatísticas para professor:', professorId);
@@ -350,10 +505,6 @@ const DashboardProfessor = () => {
                   <div className="stat-value">{totalAulasKPI}</div>
                   <div className="stat-label">Total de Aulas</div>
                 </div>
-                <div className="stat-card">
-                  <div className="stat-value">{alunosUnicosKPI}</div>
-                  <div className="stat-label">Alunos Únicos</div>
-                </div>
               </div>
             )}
           </div>
@@ -399,34 +550,6 @@ const DashboardProfessor = () => {
                 <div className="empty-state">Nenhum dado disponível para o período selecionado</div>
               )}
             </div>
-          </section>
-
-          {/* Lista de Alunos */}
-          <section className="dashboard-section">
-            <h2>Meus Alunos ({alunosUnicos.length})</h2>
-            {alunosUnicos.length > 0 ? (
-              <div className="alunos-grid">
-                {alunosUnicos.map((aluno) => (
-                  <div key={aluno.id} className="aluno-card">
-                    <div className="aluno-avatar">
-                      {aluno.nome.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="aluno-info">
-                      <h3>{aluno.nome}</h3>
-                      <p>{aluno.email}</p>
-                      <span className="aulas-count">
-                        {agendamentos.filter(a => {
-                      const alunoId = a.aluno?.id || a.aluno?._id;
-                      return alunoId === aluno.id;
-                    }).length} aula(s) agendada(s)
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="empty-state">Nenhum aluno ainda</div>
-            )}
           </section>
 
           {/* Avaliações */}
@@ -488,10 +611,39 @@ const DashboardProfessor = () => {
                       const estaAtualizando = atualizandoStatus[agendamentoId];
                       const statusOptions = ['agendada', 'confirmada', 'concluida', 'cancelada', 'ausente'];
                       
+                      // Buscar nome do aluno em vários lugares possíveis
+                      let alunoNome = agendamento.aluno?.nome || 
+                                     agendamento.id_aluno?.nome ||
+                                     null;
+                      
+                      // Buscar título da aula em vários lugares possíveis
+                      let aulaTitulo = agendamento.aula?.titulo || 
+                                      agendamento.id_aula?.titulo ||
+                                      null;
+                      
+                      // Se não encontrou nome, log para debug
+                      if (!alunoNome) {
+                        console.warn('[dashboard-professor] Nome do aluno não encontrado para agendamento:', {
+                          agendamentoId: agendamentoId,
+                          aluno: agendamento.aluno,
+                          id_aluno: agendamento.id_aluno
+                        });
+                      }
+                      if (!aulaTitulo) {
+                        console.warn('[dashboard-professor] Título da aula não encontrado para agendamento:', {
+                          agendamentoId: agendamentoId,
+                          aula: agendamento.aula,
+                          id_aula: agendamento.id_aula
+                        });
+                      }
+                      
+                      alunoNome = alunoNome || 'N/A';
+                      aulaTitulo = aulaTitulo || 'N/A';
+                      
                       return (
                         <tr key={agendamento._id}>
-                          <td>{agendamento.aluno?.nome || 'N/A'}</td>
-                          <td>{agendamento.aula?.titulo || 'N/A'}</td>
+                          <td>{alunoNome}</td>
+                          <td>{aulaTitulo}</td>
                           <td>{formatarData(agendamento.data_hora)}</td>
                           <td>
                             <span className={getStatusBadgeClass(agendamento.status)}>
