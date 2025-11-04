@@ -9,9 +9,9 @@
   --line: #E4E7EC;
   --panel: #F6F8FB;
   --surface: #FFFFFF;
-  --radius-lg: 14px;
-  --radius-md: 10px;
-  --card-max: 640px;
+  --radius-lg: 24px;
+  --radius-md: 12px;
+  --card-max: 900px;
 }
 
 /* Reset e base */
@@ -19,7 +19,7 @@
 html,body,#root { height: 100%; }
 .cadastro-aluno-container{
   min-height: 100vh;
-  background: var(--panel);
+  background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
   display: flex;
   flex-direction: column;
   font-family: "Montserrat", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -31,126 +31,198 @@ html,body,#root { height: 100%; }
   flex: 1;
   display: flex;
   justify-content: center;
-  align-items: center;
-  padding: 48px 20px;
+  align-items: flex-start;
+  padding: 60px 24px 100px;
+  overflow-y: auto;
 }
 
 /* Card */
 .cadastro-card{
   background: var(--surface);
   border-radius: var(--radius-lg);
-  padding: 32px;
+  padding: 64px 56px;
   width: 100%;
-  max-width: var(--card-max);
-  box-shadow: 0 12px 36px rgba(2,6,23,0.06);
+  max-width: 1000px !important;
+  box-shadow: 0 20px 60px rgba(2,6,23,.08), 0 0 0 1px rgba(0,0,0,.02);
   border: 1px solid var(--line);
 }
 
 /* Títulos */
 .cadastro-title{
-  font-size: clamp(20px, 3vw, 28px);
-  color: var(--brand);
+  font-size: clamp(32px, 4vw, 42px);
+  color: #084C9D;
   text-align: center;
-  margin-bottom: 6px;
+  margin-bottom: 18px;
   font-weight: 700;
+  letter-spacing: -.4px;
+  line-height: 1.2;
 }
 .cadastro-subtitle{
   color: var(--muted);
   text-align: center;
-  margin-bottom: 22px;
-  font-size: 14px;
+  margin-bottom: 48px;
+  font-size: 16px;
   font-weight: 500;
+  line-height: 1.6;
 }
 
 /* Form layout */
-.cadastro-form{ display: flex; flex-direction: column; gap: 16px; }
+.cadastro-form{ 
+  display: flex; 
+  flex-direction: column; 
+  gap: 24px; 
+}
 
 .form-row{
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 20px;
 }
-@media (max-width: 720px){ .form-row { grid-template-columns: 1fr; gap: 12px; } }
+@media (max-width: 720px){ 
+  .form-row { 
+    grid-template-columns: 1fr; 
+    gap: 24px; 
+  } 
+}
 
-.form-group{ display: flex; flex-direction: column; gap: 8px; }
+.form-group{ 
+  display: flex; 
+  flex-direction: column; 
+  gap: 8px; 
+}
 .form-label{
   color: var(--ink);
   font-weight: 600;
-  font-size: 13px;
+  font-size: 14px;
+  letter-spacing: -0.2px;
+  margin-bottom: 2px;
 }
 
 /* Inputs */
 .form-input{
-  padding: 12px 14px;
+  padding: 14px 18px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--line);
+  border: 1.5px solid var(--line);
   background: #fff;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--ink);
-  transition: box-shadow .18s ease, border-color .18s ease, background .12s ease;
+  font: 500 15px/1.5 "Montserrat", system-ui;
+  transition: all .18s ease;
   width: 100%;
   outline: none;
 }
-.form-input::placeholder{ color: #98A2B3; }
+.form-input::placeholder{ 
+  color: #9CA3AF; 
+  font-weight: 400;
+}
 .form-input:focus{
-  border-color: rgba(10,102,194,0.18);
-  box-shadow: 0 0 0 4px rgba(10,102,194,0.06);
+  border-color: #084C9D;
+  box-shadow: 0 0 0 4px rgba(8,76,157,.08);
   background: #fff;
+  transform: translateY(-1px);
+}
+.form-input:hover:not(:focus){
+  border-color: #D1D5DB;
 }
 
 /* Select como input */
 .form-input select { appearance: none; cursor: pointer; }
 
 /* Erros */
-.form-input.error{ border-color: #EF4444; background: #FEF2F2; }
-.error-message{ color: #EF4444; font-size: 12px; margin-top: 4px; }
+.form-input.error{ 
+  border-color: #EF4444; 
+  background: #FEF2F2; 
+}
+.error-message{ 
+  color: #DC2626; 
+  font-size: 13px; 
+  margin-top: 4px; 
+  font-weight: 500;
+}
 
 /* Botão primário */
 .cadastro-button{
-  background: var(--brand);
+  background: #084C9D;
   color: #fff;
-  border: none;
-  padding: 12px 16px;
-  border-radius: var(--radius-md);
-  font-size: 15px;
-  font-weight: 700;
+  border: 1px solid #084C9D;
+  padding: 16px 32px;
+  border-radius: 999px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: .3px;
   cursor: pointer;
-  transition: transform .16s ease, background .12s ease;
+  transition: all .18s ease;
   text-transform: uppercase;
-  letter-spacing: .6px;
+  box-shadow: 0 4px 12px rgba(8,76,157,.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  font-family: "Montserrat", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  width: 100%;
+  margin-top: 8px;
 }
-.cadastro-button:hover{ background: #0C5BC0; transform: translateY(-2px); }
-.cadastro-button:disabled{ background: #9CA3AF; cursor: not-allowed; transform: none; }
+.cadastro-button:hover{ 
+  background: #073D7A;
+  border-color: #073D7A;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(8,76,157, 0.35);
+}
+.cadastro-button:active{
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(10, 102, 194, 0.25);
+}
+.cadastro-button:focus-visible{
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(10, 102, 194, 0.25);
+}
+.cadastro-button:disabled{ 
+  background: #9CA3AF; 
+  border-color: #9CA3AF;
+  cursor: not-allowed; 
+  transform: none;
+  box-shadow: none;
+}
 
 /* Pequena área para ações (ex.: voltar) */
 .form-actions{ display:flex; justify-content:center; gap:12px; margin-top:6px; }
 
 /* Botão outline (Voltar, etc.) */
 .btn--outline{
-  padding: 8px 12px;
-  border-radius: var(--radius-md);
+  padding: 10px 18px;
+  border-radius: 999px;
   background: transparent;
   border: 1px solid var(--line);
   color: var(--ink);
   font-weight: 600;
+  font-size: 15px;
+  letter-spacing: .2px;
   cursor: pointer;
-  transition: background .12s ease;
+  transition: background-color .18s ease, border-color .18s ease, transform .12s ease;
+  font-family: "Montserrat", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
 }
-.btn--outline:hover{ background: rgba(10,102,194,0.04); }
+.btn--outline:hover{ 
+  background-color: rgba(8,76,157,0.06);
+  border-color: rgba(8,76,157,0.2);
+  transform: translateY(-1px);
+}
 
 /* Meta link (Entrar / já tem conta) — sublinhado surgindo do centro */
-.meta-row{ margin-top: 12px; text-align:center; color: var(--muted); font-weight: 500; }
+.meta-row{ 
+  margin-top: 24px; 
+  text-align:center; 
+  color: var(--muted); 
+  font-weight: 500; 
+  font-size: 15px;
+  line-height: 1.5;
+}
 .meta-row .meta-link{
   position: relative;
   background: transparent;
   border: none;
-  color: var(--brand);
-  font-weight: 700;
+  color: #084C9D;
+  font-weight: 600;
   padding: 6px 8px;
   cursor: pointer;
   text-decoration: none;
   outline: none;
-  transition: color .25s ease;
+  transition: color .18s ease;
 }
 .meta-row .meta-link::after{
   content: "";
@@ -159,7 +231,7 @@ html,body,#root { height: 100%; }
   bottom: 0;
   width: 100%;
   height: 2px;
-  background: var(--brand);
+  background: #084C9D;
   border-radius: 1px;
   transform: scaleX(0);
   transform-origin: center;
@@ -167,27 +239,68 @@ html,body,#root { height: 100%; }
   transition: transform .32s ease, opacity .32s ease;
 }
 .meta-row .meta-link:hover,
-.meta-row .meta-link:focus{ color: var(--brand); }
+.meta-row .meta-link:focus{ color: #073D7A; }
 .meta-row .meta-link:hover::after,
 .meta-row .meta-link:focus::after{ transform: scaleX(1); opacity: 1; }
 
 /* Acessibilidade */
-.form-input:focus-visible{ outline: none; box-shadow: 0 0 0 4px rgba(10,102,194,0.06); }
+.form-input:focus-visible{ outline: none; box-shadow: 0 0 0 4px rgba(8,76,157,0.1); }
 
-/* Responsividade final */
+/* Responsividade */
+@media (max-width: 980px){
+  .main-content{
+    padding: 80px 24px 80px;
+  }
+  .cadastro-card{
+    padding: 56px 40px;
+    max-width: 900px !important;
+  }
+}
+
+@media (max-width: 768px){
+  .main-content{
+    padding: 60px 20px 60px;
+  }
+  .cadastro-card{
+    padding: 48px 32px;
+  }
+  .cadastro-title{
+    font-size: 28px;
+  }
+  .cadastro-form{
+    gap: 20px;
+  }
+}
+
 @media (max-width: 480px){
-  .cadastro-card{ padding: 20px; margin: 12px; }
-  .cadastro-title{ font-size: 20px; }
-  .cadastro-subtitle{ font-size: 13px; }
-  .form-input{ padding: 10px 12px; font-size: 14px; }
-  .cadastro-button{ padding: 12px; font-size: 14px; }
+  .main-content{
+    padding: 50px 16px 50px;
+  }
+  .cadastro-card{ 
+    padding: 40px 24px; 
+    margin: 0;
+  }
+  .cadastro-title{ 
+    font-size: 24px; 
+  }
+  .cadastro-subtitle{ 
+    font-size: 15px; 
+  }
+  .form-input{ 
+    padding: 12px 14px; 
+    font-size: 14px; 
+  }
+  .cadastro-button{ 
+    padding: 12px 16px; 
+    font-size: 14px; 
+  }
 }
 
 /* 🔹 Seta de voltar com círculo */
 .voltar-seta {
   position: absolute;
-  top: 110px; /* logo abaixo do header */
-  left: 100px;
+  top: 124px; /* alinhado com o topo do container */
+  left: calc((100% - 1000px) / 2 - 70px); /* alinhado com o início do container */
   width: 54px;
   height: 54px;
   border-radius: 50%;
@@ -205,16 +318,23 @@ html,body,#root { height: 100%; }
 }
 
 .voltar-seta:hover {
-  color: var(--brand); /* cor da marca ao passar o mouse */
+  color: #084C9D; /* cor da marca ao passar o mouse */
   transform: translateX(-4px);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
 }
 
 /* Responsivo */
+@media (max-width: 980px) {
+  .voltar-seta {
+    top: 104px;
+    left: calc((100% - 900px) / 2 - 70px);
+  }
+}
+
 @media (max-width: 768px) {
   .voltar-seta {
-    top: 90px;
-    left: 22px;
+    top: 84px;
+    left: 20px;
     width: 46px;
     height: 46px;
     font-size: 26px;
