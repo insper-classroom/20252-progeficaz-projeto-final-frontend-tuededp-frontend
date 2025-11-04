@@ -3,6 +3,9 @@
   background: #172B4D;
   padding: 40px 0 30px;
   margin-top: auto;
+
+  /* garante que o footer não encolha em layouts flex (ex: body com min-height) */
+  flex-shrink: 0;
 }
 
 .footer-content {
@@ -10,6 +13,10 @@
   margin: 0 auto;
   padding: 0 20px;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
 }
 
 /* Social Media Icons */
@@ -17,26 +24,45 @@
   display: flex;
   justify-content: center;
   gap: 30px;
-  margin-bottom: 30px;
+  margin-bottom: 0; /* controlado por footer-content gap */
 }
 
-.social-link {
-  color: white;
-  text-decoration: none;
+/* Reset e estilização para botões que substituem links (<button> usado) */
+.social-link,
+.nav-link {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  outline: none;
+}
+
+/* Social button visual */
+.social-link {
+  color: white;
   width: 40px;
   height: 40px;
   border: 2px solid white;
   border-radius: 8px;
-  transition: all 0.3s ease;
+  transition: all 0.28s ease;
 }
 
-.social-link:hover {
+/* hover e foco acessível */
+.social-link:hover,
+.social-link:focus {
   background: white;
   color: #172B4D;
   transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.15);
 }
 
 .social-link svg {
@@ -49,38 +75,54 @@
   display: flex;
   justify-content: center;
   gap: 40px;
-  margin-bottom: 25px;
+  margin-bottom: 0;
   flex-wrap: wrap;
+  align-items: center;
 }
 
+/* estilo textual dos nav buttons */
 .nav-link {
   color: white;
   text-decoration: none;
   font-size: 16px;
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition: all 0.28s ease;
   position: relative;
+  padding: 6px 4px;
 }
 
-.nav-link:hover {
+/* hover e foco acessível */
+.nav-link:hover,
+.nav-link:focus {
   color: #93C5FD;
   transform: translateY(-1px);
 }
 
+/* underline animada */
 .nav-link::after {
   content: '';
   position: absolute;
   width: 0;
   height: 2px;
-  bottom: -5px;
+  bottom: -6px;
   left: 50%;
   background: #93C5FD;
-  transition: all 0.3s ease;
+  transition: width 0.28s ease, left 0.28s ease;
   transform: translateX(-50%);
 }
 
-.nav-link:hover::after {
+.nav-link:hover::after,
+.nav-link:focus::after {
   width: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* focus ring visível para teclados */
+.social-link:focus-visible,
+.nav-link:focus-visible {
+  box-shadow: 0 0 0 4px rgba(147,197,253,0.18);
+  border-radius: 8px;
 }
 
 /* Copyright */
@@ -89,6 +131,7 @@
   font-size: 14px;
   margin: 0;
   font-weight: 400;
+  padding: 6px 0 0 0;
 }
 
 /* Responsive Design */
@@ -96,48 +139,52 @@
   .footer {
     padding: 30px 0 20px;
   }
-  
+
   .social-icons {
     gap: 20px;
-    margin-bottom: 25px;
   }
-  
+
   .social-link {
     width: 35px;
     height: 35px;
+    border-radius: 6px;
   }
-  
+
   .social-link svg {
     width: 18px;
     height: 18px;
   }
-  
+
   .footer-nav {
     gap: 25px;
-    margin-bottom: 20px;
   }
-  
+
   .nav-link {
     font-size: 14px;
   }
-  
+
   .copyright {
     font-size: 12px;
   }
 }
 
 @media (max-width: 480px) {
+  .footer-content {
+    gap: 12px;
+  }
+
   .footer-nav {
-    gap: 15px;
+    gap: 12px;
     flex-direction: column;
     align-items: center;
   }
-  
+
   .nav-link {
     font-size: 13px;
+    padding: 8px 0;
   }
-  
+
   .social-icons {
-    gap: 15px;
+    gap: 12px;
   }
 }
