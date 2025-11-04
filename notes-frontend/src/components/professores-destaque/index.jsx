@@ -27,8 +27,8 @@ export default function ProfessoresDestaque() {
   };
 
   const renderStars = (nota) => {
-    // Garantir que nota seja um número válido entre 0 e 5
-    const notaValida = Math.max(0, Math.min(5, Number(nota) || 0));
+    // Converte de 0-10 (escala das avaliações) para 0-5 (estrelas)
+    const notaValida = Math.max(0, Math.min(5, Number(nota) / 2 || 0));
     const fullStars = Math.floor(notaValida);
     const hasHalfStar = notaValida % 1 >= 0.5;
     const emptyStars = Math.max(0, Math.min(5, 5 - fullStars - (hasHalfStar ? 1 : 0)));
@@ -73,22 +73,32 @@ export default function ProfessoresDestaque() {
             {professores.map((professor) => (
             <div key={professor._id || professor.id} className="pd-card">
               <div className="pd-card__avatar">
-                {professor.avatar && professor.avatar.startsWith('http') ? (
-                  <img src={professor.avatar} alt={professor.nome} />
-                ) : professor.avatar ? (
-                  <img src={`http://localhost:5000${professor.avatar}`} alt={professor.nome} />
-                ) : (
-                  <div className="pd-card__avatar-placeholder">
-                    {professor.nome?.charAt(0).toUpperCase() || 'P'}
-                  </div>
-                )}
+                {(() => {
+                  const avatarUrl = professor.avatar_url || professor.avatar || professor.avatarUrl || '';
+                  if (avatarUrl && avatarUrl.startsWith('http')) {
+                    return <img src={avatarUrl} alt={professor.nome} />;
+                  } else if (avatarUrl) {
+                    return <img src={`http://localhost:5000${avatarUrl}`} alt={professor.nome} />;
+                  } else {
+                    return (
+                      <div className="pd-card__avatar-placeholder">
+                        {professor.nome?.charAt(0).toUpperCase() || 'P'}
+                      </div>
+                    );
+                  }
+                })()}
               </div>
               
               <div className="pd-card__content">
                 <h3 className="pd-card__name">{professor.nome}</h3>
                 
-                {professor.bio && (
-                  <p className="pd-card__bio">{professor.bio.substring(0, 100)}{professor.bio.length > 100 ? '...' : ''}</p>
+                {Array.isArray(professor.quer_ensinar) && professor.quer_ensinar.length > 0 && (
+                  <div className="pd-card__ensinar">
+                    <span className="pd-card__ensinar-text">
+                      {professor.quer_ensinar.slice(0, 3).join(', ')}
+                      {professor.quer_ensinar.length > 3 && '...'}
+                    </span>
+                  </div>
                 )}
                 
                 <div className="pd-card__rating">

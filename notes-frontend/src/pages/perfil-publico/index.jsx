@@ -92,10 +92,8 @@ export default function PerfilPublico() {
             setAvaliacoes(avaliacoesArray);
             
             // Se as estatísticas vierem do backend, usar; senão calcular manualmente
-            // Verificar diferentes formatos possíveis de resposta da API
             const mediaFromStats = stats?.media || stats?.nota_media || stats?.media_notas || null;
             if (stats && mediaFromStats !== undefined && mediaFromStats !== null) {
-              // Normalizar os dados das estatísticas
               setStatsAvaliacoes({
                 media: Number(mediaFromStats) || 0,
                 total: stats.total || stats.total_avaliacoes || avaliacoesArray.length || 0,
@@ -103,7 +101,6 @@ export default function PerfilPublico() {
                 nota_max: stats.nota_max || stats.max || null
               });
             } else if (avaliacoesArray.length > 0) {
-              // Calcular média manualmente
               const somaNotas = avaliacoesArray.reduce((acc, av) => {
                 const nota = Number(av.nota) || 0;
                 return acc + nota;
@@ -117,7 +114,6 @@ export default function PerfilPublico() {
                 nota_max: Math.max(...avaliacoesArray.map(av => Number(av.nota) || 0))
               });
             } else {
-              // Não há avaliações
               setStatsAvaliacoes({
                 media: 0,
                 total: 0
@@ -167,10 +163,36 @@ export default function PerfilPublico() {
     navigate(`/chats?to=${targetId}`);
   };
 
+  const renderStars = (nota) => {
+    const notaValida = Math.max(0, Math.min(5, Number(nota) / 2 || 0)); // Converte de 0-10 para 0-5
+    const fullStars = Math.floor(notaValida);
+    const hasHalfStar = notaValida % 1 >= 0.5;
+    const emptyStars = Math.max(0, Math.min(5, 5 - fullStars - (hasHalfStar ? 1 : 0)));
+
+    return (
+      <div className="pp-stars">
+        {fullStars > 0 && [...Array(fullStars)].map((_, i) => (
+          <svg key={i} width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+          </svg>
+        ))}
+        {hasHalfStar && (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fillOpacity="0.5" />
+          </svg>
+        )}
+        {emptyStars > 0 && [...Array(emptyStars)].map((_, i) => (
+          <svg key={i} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+          </svg>
+        ))}
+      </div>
+    );
+  };
+
   if (err) return <div className="container">{err}</div>;
   if (!usuario) return <div className="container">Carregando…</div>;
 
-  // helpers de exibição
   const hasDisponibilidade =
     isProfessor &&
     (usuario?.disponibilidade?.timezone ||
@@ -179,319 +201,360 @@ export default function PerfilPublico() {
       typeof usuario?.valor_hora === "number" ||
       (usuario?.modalidades?.length ?? 0) > 0);
 
+  const avatarUrl = usuario.avatar_url || usuario.avatar || usuario.avatarUrl || '';
+  const displayAvatar = avatarUrl && avatarUrl.startsWith('http') 
+    ? avatarUrl 
+    : avatarUrl 
+      ? `http://localhost:5000${avatarUrl}` 
+      : null;
+
   return (
     <div className="perfil-publico">
       <HeaderLogado />
 
       <main className="pp-main">
-        {/* banner */}
-        {usuario.banner_url && <div className="pp-banner" style={{ backgroundImage: `url(${usuario.banner_url})` }} />}
-
-        <section className="pp-card pp-header">
-          <img className="pp-avatar" src={usuario.avatar_url || "/avatar-placeholder.png"} alt={usuario.nome} />
-          <div className="pp-id">
-            <div className="pp-name-row">
-              <h1>{usuario.nome}</h1>
-              <span className={`role-pill ${isProfessor ? "prof" : "aluno"}`} aria-label={`Tipo: ${roleLabel}`}>
-                {roleLabel}
-              </span>
-            </div>
-            {usuario.headline && <p className="pp-headline">{usuario.headline}</p>}
-            {usuario.endereco?.cidade && (
-              <p className="pp-local">
-                {usuario.endereco.cidade} • {usuario.endereco.estado}
-              </p>
-            )}
-            <div className="pp-actions">
-              {isProfessor ? (
-                <>
-                  <button className="btn btn--primary" onClick={handleAgendarClick}>
-                    Agendar Aula
-                  </button>
-                  <button className="btn btn--outline" onClick={iniciarConversa} disabled={!usuario?._id}>
-                    Iniciar conversa
-                  </button>
-                </>
+        {/* Banner Hero Section */}
+        <div className="pp-hero-section">
+          {usuario.banner_url ? (
+            <div className="pp-banner" style={{ backgroundImage: `url(${usuario.banner_url})` }} />
+          ) : (
+            <div className="pp-banner pp-banner-default" />
+          )}
+          
+          <div className="pp-hero-content">
+            <div className="pp-avatar-container">
+              {displayAvatar ? (
+                <img className="pp-avatar" src={displayAvatar} alt={usuario.nome} />
               ) : (
-                <button className="btn btn--primary" onClick={iniciarConversa} disabled={!usuario?._id}>
-                  Iniciar conversa
-                </button>
-              )}
-            </div>
-          </div>
-        </section>
-
-        <div className="pp-grid">
-          {/* Avaliações — apenas professor */}
-          {isProfessor && (
-            <section className="pp-card">
-              <h3>Avaliações</h3>
-              {statsAvaliacoes && statsAvaliacoes.total > 0 ? (
-                <div className="pp-avaliacoes">
-                  <div className="pp-avaliacao-media">
-                    <span className="pp-avaliacao-numero">
-                      {statsAvaliacoes.media !== undefined && statsAvaliacoes.media !== null 
-                        ? statsAvaliacoes.media.toFixed(1) 
-                        : "0.0"}
-                    </span>
-                    <span className="pp-avaliacao-max">/ 10</span>
-                  </div>
-                  {statsAvaliacoes.total > 0 && (
-                    <p className="pp-avaliacao-total">
-                      {statsAvaliacoes.total} avaliação{statsAvaliacoes.total !== 1 ? "ões" : ""}
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <p className="pp-small muted">Nenhuma avaliação ainda</p>
-              )}
-
-              {avaliacoes.length > 0 && (
-                <div className="pp-avaliacoes-list" style={{ marginTop: "1.5rem" }}>
-                  <h4 style={{ marginBottom: "1rem", fontSize: "1rem" }}>Avaliações Recebidas</h4>
-                  {avaliacoes.map((avaliacao) => (
-                    <div
-                      key={avaliacao._id || avaliacao.id}
-                      className="pp-avaliacao-item"
-                      style={{
-                        padding: "1rem",
-                        marginBottom: "0.75rem",
-                        backgroundColor: "#f8f9fa",
-                        borderRadius: "8px",
-                        borderLeft: "3px solid #0A66C2",
-                      }}
-                    >
-                      <div
-                        style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.5rem" }}
-                      >
-                        <div>
-                          <strong style={{ display: "block" }}>{avaliacao.aluno?.nome || avaliacao.id_aluno?.nome || "Aluno"}</strong>
-                          {avaliacao.aula?.titulo || avaliacao.id_aula?.titulo ? (
-                            <span style={{ fontSize: "0.875rem", color: "#666" }}>
-                              {avaliacao.aula?.titulo || avaliacao.id_aula?.titulo}
-                            </span>
-                          ) : null}
-                        </div>
-                        <span style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#0A66C2" }}>{avaliacao.nota}/10</span>
-                      </div>
-                      {avaliacao.texto && <p style={{ margin: 0, fontSize: "0.9rem", color: "#333" }}>"{avaliacao.texto}"</p>}
-                      {avaliacao.created_at && (
-                        <p style={{ marginTop: "0.5rem", fontSize: "0.75rem", color: "#999" }}>
-                          {new Date(avaliacao.created_at).toLocaleDateString("pt-BR")}
-                        </p>
-                      )}
-                    </div>
-                  ))}
+                <div className="pp-avatar-placeholder">
+                  {usuario.nome?.charAt(0).toUpperCase() || 'P'}
                 </div>
               )}
-            </section>
-          )}
-
-          {/* Sobre: aluno usa bio; professor usa historico (fallback para bio) */}
-          <section className="pp-card">
-            <h3>Sobre</h3>
-            <p className="pp-bio">
-              {isProfessor
-                ? usuario.historico_academico_profissional || usuario.bio || "Sem informações."
-                : usuario.bio || "Sem biografia."}
-            </p>
-          </section>
-
-          {/* ===== ALUNO: somente interesses ===== */}
-          {!isProfessor && (
-            <>
-              <section className="pp-card">
-                <h3>Quero aprender</h3>
-                <Chips items={usuario.quer_aprender} />
-              </section>
-
-              {/* opcional: idiomas do aluno, se existir */}
-              {Array.isArray(usuario.idiomas) && usuario.idiomas.length > 0 && (
-                <section className="pp-card">
-                  <h3>Idiomas</h3>
-                  <Chips items={usuario.idiomas} />
-                </section>
+            </div>
+            
+            <div className="pp-profile-info">
+              <div className="pp-name-section">
+                <h1 className="pp-name">{usuario.nome}</h1>
+                <span className={`role-pill ${isProfessor ? "prof" : "aluno"}`}>
+                  {roleLabel}
+                </span>
+              </div>
+              
+              {usuario.headline && (
+                <p className="pp-headline">{usuario.headline}</p>
               )}
-            </>
-          )}
-
-          {/* ===== PROFESSOR: todas as infos de venda ===== */}
-          {isProfessor && (
-            <>
-              {/* especializações e o que ensina */}
-              {(Array.isArray(usuario.especializacoes) && usuario.especializacoes.length > 0) && (
-                <section className="pp-card">
-                  <h3>Especializações</h3>
-                  <Chips items={usuario.especializacoes} />
-                </section>
-              )}
-
-              {(Array.isArray(usuario.quer_ensinar) && usuario.quer_ensinar.length > 0) && (
-                <section className="pp-card">
-                  <h3>Quero ensinar</h3>
-                  <Chips items={usuario.quer_ensinar} />
-                </section>
-              )}
-
-              {(Array.isArray(usuario.idiomas) && usuario.idiomas.length > 0) && (
-                <section className="pp-card">
-                  <h3>Idiomas</h3>
-                  <Chips items={usuario.idiomas} />
-                </section>
-              )}
-
-              {/* formação acadêmica */}
-              {Array.isArray(usuario.formacao) && usuario.formacao.length > 0 && (
-                <section className="pp-card">
-                  <h3>Formação Acadêmica</h3>
-                  <ul className="pp-list">
-                    {usuario.formacao.map((f, i) => (
-                      <li key={i}>
-                        <div className="pp-list-title">
-                          {f.curso || "Curso"} — {f.instituicao || "Instituição"}
-                        </div>
-                        {(f.inicio || f.fim) && (
-                          <div className="pp-list-desc">
-                            {f.inicio || "?"} — {f.fim || "Atual"}
-                          </div>
-                        )}
-                        {f.descricao && <div className="pp-list-desc">{f.descricao}</div>}
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
-
-              {/* experiências */}
-              {Array.isArray(usuario.experiencias) && usuario.experiencias.length > 0 && (
-                <section className="pp-card">
-                  <h3>Experiências</h3>
-                  <ul className="pp-list">
-                    {usuario.experiencias.map((ex, i) => (
-                      <li key={i}>
-                        <div className="pp-list-title">{ex.titulo}</div>
-                        {(ex.inicio || ex.fim) && (
-                          <div className="pp-list-desc">
-                            {ex.inicio || "?"} — {ex.fim || "Atual"}
-                          </div>
-                        )}
-                        {ex.descricao && <div className="pp-list-desc">{ex.descricao}</div>}
-                        {ex.link && (
-                          <a className="pp-link" href={ex.link} target="_blank" rel="noreferrer">
-                            ver
-                          </a>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
-
-              {/* certificações */}
-              {Array.isArray(usuario.certificacoes) && usuario.certificacoes.length > 0 && (
-                <section className="pp-card">
-                  <h3>Certificações</h3>
-                  <ul className="pp-list">
-                    {usuario.certificacoes.map((c, i) => (
-                      <li key={i}>
-                        <div className="pp-list-title">
-                          {c.titulo} {c.org ? `• ${c.org}` : ""}
-                        </div>
-                        {(c.ano || c.link) && (
-                          <div className="pp-list-desc">
-                            {c.ano ? `Ano: ${c.ano}` : ""}
-                            {c.ano && c.link ? " • " : ""}
-                            {c.link ? (
-                              <a className="pp-link" href={c.link} target="_blank" rel="noreferrer">
-                                ver
-                              </a>
-                            ) : null}
-                          </div>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
-
-              {/* projetos */}
-              {Array.isArray(usuario.projetos) && usuario.projetos.length > 0 && (
-                <section className="pp-card">
-                  <h3>Projetos</h3>
-                  <ul className="pp-list">
-                    {usuario.projetos.map((p, i) => (
-                      <li key={i}>
-                        <div className="pp-list-title">{p.titulo}</div>
-                        {p.resumo && <div className="pp-list-desc">{p.resumo}</div>}
-                        {p.link && (
-                          <a className="pp-link" href={p.link} target="_blank" rel="noreferrer">
-                            ver
-                          </a>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
-            </>
-          )}
-
-          {/* Disponibilidade/valor/modalidades — somente professor e quando houver algo */}
-          {hasDisponibilidade && (
-            <section className="pp-card">
-              <h3>Disponibilidade</h3>
-              <p className="pp-small">
-                {usuario.disponibilidade?.timezone ? (
-                  <>
-                    Fuso: {usuario.disponibilidade.timezone}
-                    <br />
-                  </>
-                ) : null}
-                {usuario.disponibilidade?.dias?.length ? `Dias: ${usuario.disponibilidade.dias.join(", ")}` : ""}
-                {usuario.disponibilidade?.horarios?.length
-                  ? ` | Horários: ${usuario.disponibilidade.horarios.join(", ")}`
-                  : ""}
-              </p>
-              {typeof usuario.valor_hora === "number" && (
-                <p className="pp-small">
-                  Valor/hora: <b>R$ {usuario.valor_hora}</b>
+              
+              {usuario.endereco?.cidade && (
+                <p className="pp-local">
+                  📍 {usuario.endereco.cidade}, {usuario.endereco.estado}
                 </p>
               )}
-              {usuario.modalidades?.length ? (
-                <p className="pp-small">Modalidades: {usuario.modalidades.join(", ")}</p>
-              ) : null}
-            </section>
-          )}
 
-          {/* Links — comum aos dois perfis, se houver */}
-          {(usuario.links?.linkedin || usuario.links?.github || usuario.links?.site) && (
+              {/* Stats para professor */}
+              {isProfessor && statsAvaliacoes && statsAvaliacoes.total > 0 && (
+                <div className="pp-stats-row">
+                  <div className="pp-stat-item">
+                    <div className="pp-stat-value">{statsAvaliacoes.media.toFixed(1)}</div>
+                    <div className="pp-stat-label">Avaliação Média</div>
+                  </div>
+                  <div className="pp-stat-divider" />
+                  <div className="pp-stat-item">
+                    <div className="pp-stat-value">{statsAvaliacoes.total}</div>
+                    <div className="pp-stat-label">{statsAvaliacoes.total === 1 ? 'Avaliação' : 'Avaliações'}</div>
+                  </div>
+                  {renderStars(statsAvaliacoes.media)}
+                </div>
+              )}
+
+              <div className="pp-actions">
+                {isProfessor ? (
+                  <>
+                    <button className="btn btn--primary" onClick={handleAgendarClick}>
+                      Agendar Aula
+                    </button>
+                    <button className="btn btn--outline" onClick={iniciarConversa} disabled={!usuario?._id}>
+                      Iniciar conversa
+                    </button>
+                  </>
+                ) : (
+                  <button className="btn btn--primary" onClick={iniciarConversa} disabled={!usuario?._id}>
+                    Iniciar conversa
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="pp-content-grid">
+          {/* Coluna Esquerda - Conteúdo Principal */}
+          <div className="pp-content-left">
+            {/* Sobre */}
             <section className="pp-card">
-              <h3>Links</h3>
-              <ul className="pp-links">
-                {usuario.links?.linkedin && (
-                  <li>
-                    <a href={usuario.links.linkedin} target="_blank" rel="noreferrer">
-                      LinkedIn
-                    </a>
-                  </li>
-                )}
-                {usuario.links?.github && (
-                  <li>
-                    <a href={usuario.links.github} target="_blank" rel="noreferrer">
-                      GitHub
-                    </a>
-                  </li>
-                )}
-                {usuario.links?.site && (
-                  <li>
-                    <a href={usuario.links.site} target="_blank" rel="noreferrer">
-                      Site/Portfólio
-                    </a>
-                  </li>
-                )}
-              </ul>
+              <h3>Sobre</h3>
+              <p className="pp-bio">
+                {isProfessor
+                  ? usuario.historico_academico_profissional || usuario.bio || "Este professor ainda não adicionou uma descrição."
+                  : usuario.bio || "Este aluno ainda não adicionou uma biografia."}
+              </p>
             </section>
-          )}
+
+            {/* Especializações e Quero Ensinar - Professor */}
+            {isProfessor && (
+              <>
+                {Array.isArray(usuario.especializacoes) && usuario.especializacoes.length > 0 && (
+                  <section className="pp-card">
+                    <h3>Especializações</h3>
+                    <Chips items={usuario.especializacoes} />
+                  </section>
+                )}
+
+                {Array.isArray(usuario.quer_ensinar) && usuario.quer_ensinar.length > 0 && (
+                  <section className="pp-card">
+                    <h3>Disciplinas que Ensino</h3>
+                    <Chips items={usuario.quer_ensinar} />
+                  </section>
+                )}
+              </>
+            )}
+
+            {/* Quero Aprender - Aluno */}
+            {!isProfessor && Array.isArray(usuario.quer_aprender) && usuario.quer_aprender.length > 0 && (
+              <section className="pp-card">
+                <h3>Quero Aprender</h3>
+                <Chips items={usuario.quer_aprender} />
+              </section>
+            )}
+
+            {/* Formação Acadêmica */}
+            {Array.isArray(usuario.formacao) && usuario.formacao.length > 0 && (
+              <section className="pp-card">
+                <h3>Formação Acadêmica</h3>
+                <ul className="pp-list">
+                  {usuario.formacao.map((f, i) => (
+                    <li key={i}>
+                      <div className="pp-list-title">
+                        {f.curso || "Curso"} — {f.instituicao || "Instituição"}
+                      </div>
+                      {(f.inicio || f.fim) && (
+                        <div className="pp-list-desc">
+                          {f.inicio || "?"} — {f.fim || "Atual"}
+                        </div>
+                      )}
+                      {f.descricao && <div className="pp-list-desc">{f.descricao}</div>}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {/* Experiências */}
+            {Array.isArray(usuario.experiencias) && usuario.experiencias.length > 0 && (
+              <section className="pp-card">
+                <h3>Experiências Profissionais</h3>
+                <ul className="pp-list">
+                  {usuario.experiencias.map((ex, i) => (
+                    <li key={i}>
+                      <div className="pp-list-title">{ex.cargo || ex.titulo || "Cargo"}</div>
+                      {ex.empresa && <div className="pp-list-company">{ex.empresa}</div>}
+                      {(ex.inicio || ex.fim) && (
+                        <div className="pp-list-desc">
+                          {ex.inicio || "?"} — {ex.fim || "Atual"}
+                        </div>
+                      )}
+                      {ex.descricao && <div className="pp-list-desc">{ex.descricao}</div>}
+                      {ex.link && (
+                        <a className="pp-link" href={ex.link} target="_blank" rel="noreferrer">
+                          Ver detalhes →
+                        </a>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {/* Certificações */}
+            {Array.isArray(usuario.certificacoes) && usuario.certificacoes.length > 0 && (
+              <section className="pp-card">
+                <h3>Certificações</h3>
+                <ul className="pp-list">
+                  {usuario.certificacoes.map((c, i) => (
+                    <li key={i}>
+                      <div className="pp-list-title">
+                        {c.titulo} {c.org ? `• ${c.org}` : ""}
+                      </div>
+                      {(c.ano || c.link) && (
+                        <div className="pp-list-desc">
+                          {c.ano ? `Ano: ${c.ano}` : ""}
+                          {c.ano && c.link ? " • " : ""}
+                          {c.link ? (
+                            <a className="pp-link" href={c.link} target="_blank" rel="noreferrer">
+                              Ver certificado →
+                            </a>
+                          ) : null}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {/* Links */}
+            {(usuario.links?.linkedin || usuario.links?.github || usuario.links?.site) && (
+              <section className="pp-card">
+                <h3>Links</h3>
+                <ul className="pp-links">
+                  {usuario.links?.linkedin && (
+                    <li>
+                      <a href={usuario.links.linkedin} target="_blank" rel="noreferrer">
+                        🔗 LinkedIn
+                      </a>
+                    </li>
+                  )}
+                  {usuario.links?.github && (
+                    <li>
+                      <a href={usuario.links.github} target="_blank" rel="noreferrer">
+                        🔗 GitHub
+                      </a>
+                    </li>
+                  )}
+                  {usuario.links?.site && (
+                    <li>
+                      <a href={usuario.links.site} target="_blank" rel="noreferrer">
+                        🔗 Site/Portfólio
+                      </a>
+                    </li>
+                  )}
+                </ul>
+              </section>
+            )}
+
+            {/* Projetos */}
+            {Array.isArray(usuario.projetos) && usuario.projetos.length > 0 && (
+              <section className="pp-card">
+                <h3>Projetos</h3>
+                <ul className="pp-list">
+                  {usuario.projetos.map((p, i) => (
+                    <li key={i}>
+                      <div className="pp-list-title">{p.titulo}</div>
+                      {p.resumo && <div className="pp-list-desc">{p.resumo}</div>}
+                      {p.link && (
+                        <a className="pp-link" href={p.link} target="_blank" rel="noreferrer">
+                          Ver projeto →
+                        </a>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+          </div>
+
+          {/* Coluna Direita - Sidebar */}
+          <div className="pp-content-right">
+            {/* Avaliações - Professor */}
+            {isProfessor && (
+              <section className="pp-card pp-card-avaliacoes">
+                <h3>Avaliações</h3>
+                {statsAvaliacoes && statsAvaliacoes.total > 0 ? (
+                  <>
+                    <div className="pp-avaliacao-destaque">
+                      <div className="pp-avaliacao-numero-grande">
+                        {statsAvaliacoes.media.toFixed(1)}
+                      </div>
+                      <div className="pp-avaliacao-max">/ 10</div>
+                      {renderStars(statsAvaliacoes.media)}
+                    </div>
+                    <p className="pp-avaliacao-total">
+                      {statsAvaliacoes.total} {statsAvaliacoes.total === 1 ? 'avaliação' : 'avaliações'}
+                    </p>
+
+                    {avaliacoes.length > 0 && (
+                      <div className="pp-avaliacoes-list">
+                        <h4>Avaliações Recebidas</h4>
+                        {avaliacoes.slice(0, 5).map((avaliacao) => (
+                          <div key={avaliacao._id || avaliacao.id} className="pp-avaliacao-item">
+                            <div className="pp-avaliacao-header">
+                              <div>
+                                <strong>{avaliacao.aluno?.nome || avaliacao.id_aluno?.nome || "Aluno"}</strong>
+                                {avaliacao.aula?.titulo || avaliacao.id_aula?.titulo ? (
+                                  <span className="pp-avaliacao-aula">
+                                    {avaliacao.aula?.titulo || avaliacao.id_aula?.titulo}
+                                  </span>
+                                ) : null}
+                              </div>
+                              <span className="pp-avaliacao-nota">{avaliacao.nota}/10</span>
+                            </div>
+                            {avaliacao.texto && (
+                              <p className="pp-avaliacao-texto">"{avaliacao.texto}"</p>
+                            )}
+                            {avaliacao.created_at && (
+                              <p className="pp-avaliacao-data">
+                                {new Date(avaliacao.created_at).toLocaleDateString("pt-BR")}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p className="pp-small muted">Nenhuma avaliação ainda</p>
+                )}
+              </section>
+            )}
+
+            {/* Idiomas */}
+            {Array.isArray(usuario.idiomas) && usuario.idiomas.length > 0 && (
+              <section className="pp-card">
+                <h3>Idiomas</h3>
+                <Chips items={usuario.idiomas} />
+              </section>
+            )}
+
+            {/* Disponibilidade */}
+            {hasDisponibilidade && (
+              <section className="pp-card">
+                <h3>Disponibilidade</h3>
+                {usuario.disponibilidade?.timezone && (
+                  <div className="pp-info-item">
+                    <span className="pp-info-label">Fuso horário:</span>
+                    <span className="pp-info-value">{usuario.disponibilidade.timezone}</span>
+                  </div>
+                )}
+                {usuario.disponibilidade?.dias?.length > 0 && (
+                  <div className="pp-info-item">
+                    <span className="pp-info-label">Dias:</span>
+                    <span className="pp-info-value">{usuario.disponibilidade.dias.join(", ")}</span>
+                  </div>
+                )}
+                {usuario.disponibilidade?.horarios?.length > 0 && (
+                  <div className="pp-info-item">
+                    <span className="pp-info-label">Horários:</span>
+                    <span className="pp-info-value">{usuario.disponibilidade.horarios.join(", ")}</span>
+                  </div>
+                )}
+                {typeof usuario.valor_hora === "number" && (
+                  <div className="pp-info-item pp-info-item-highlight">
+                    <span className="pp-info-label">Valor/hora:</span>
+                    <span className="pp-info-value">R$ {usuario.valor_hora.toFixed(2)}</span>
+                  </div>
+                )}
+                {usuario.modalidades?.length > 0 && (
+                  <div className="pp-info-item">
+                    <span className="pp-info-label">Modalidades:</span>
+                    <div className="pp-chips pp-chips-small">
+                      {usuario.modalidades.map((m, i) => (
+                        <span key={i} className="pp-chip">{m}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </section>
+            )}
+          </div>
         </div>
       </main>
 
