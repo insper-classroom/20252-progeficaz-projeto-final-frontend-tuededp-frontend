@@ -66,8 +66,10 @@ export default function Home() {
     <div className="home">
       {isAuthenticated ? <HeaderLogado /> : <HeaderDeslogado />}
 
+      {/* ANCORAGEM: elemento topo para o footer rolar até aqui */}
+      <div id="top" />
+
       {/* ===== HERO ===== */}
-      {/* ...resto igual */}
       <section className="ll-hero">
         <div className="ll-hero__container">
           <div className="ll-hero__copy">
@@ -88,7 +90,7 @@ export default function Home() {
               <div className="ll-hero__stat">
                 <div className="ll-hero__stat-number">+{stats.totalProfessores}</div>
                 <div className="ll-hero__stat-label">Professores</div>
-            </div>
+              </div>
               <div className="ll-hero__stat">
                 <div className="ll-hero__stat-number">+{stats.totalAulas}</div>
                 <div className="ll-hero__stat-label">Aulas disponíveis</div>
