@@ -1,5 +1,5 @@
 // Serviço de API para integração com backend
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'http://54.196.232.66/';
 
 // Buscar estatísticas gerais da plataforma
 export const buscarEstatisticas = async () => {
