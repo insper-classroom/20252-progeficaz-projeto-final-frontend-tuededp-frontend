@@ -14,6 +14,7 @@ export default function HomeProfessor() {
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState(null);
   const [sucesso, setSucesso] = useState(null);
+  const [mostrarTodasAulas, setMostrarTodasAulas] = useState(false);
   
   const [formData, setFormData] = useState({
     titulo: '',
@@ -296,25 +297,37 @@ export default function HomeProfessor() {
                 <p className="hint">Clique em "Criar Nova Aula" para começar.</p>
               </div>
             ) : (
-              <div className="hp-aulas-grid">
-                {minhasAulas.map((aula) => (
-                  <div key={aula._id} className="hp-aula-card">
-                    <h3>{aula.titulo}</h3>
-                    {aula.descricao_aula && <p className="hp-aula-desc">{aula.descricao_aula}</p>}
-                    <div className="hp-aula-meta">
-                      {aula.categoria && (
-                        <span className="hp-badge">{aula.categoria.nome}</span>
-                      )}
-                      {aula.preco_decimal && (
-                        <span className="hp-price">R$ {parseFloat(aula.preco_decimal).toFixed(2)}</span>
-                      )}
-                      <span className={`hp-status hp-status-${aula.status?.toLowerCase() || 'disponivel'}`}>
-                        {aula.status || 'disponível'}
-                      </span>
+              <>
+                <div className="hp-aulas-grid">
+                  {(mostrarTodasAulas ? minhasAulas : minhasAulas.slice(0, 3)).map((aula) => (
+                    <div key={aula._id} className="hp-aula-card">
+                      <h3>{aula.titulo}</h3>
+                      {aula.descricao_aula && <p className="hp-aula-desc">{aula.descricao_aula}</p>}
+                      <div className="hp-aula-meta">
+                        {aula.categoria && (
+                          <span className="hp-badge">{aula.categoria.nome}</span>
+                        )}
+                        {aula.preco_decimal && (
+                          <span className="hp-price">R$ {parseFloat(aula.preco_decimal).toFixed(2)}</span>
+                        )}
+                        <span className={`hp-status hp-status-${aula.status?.toLowerCase() || 'disponivel'}`}>
+                          {aula.status || 'disponível'}
+                        </span>
+                      </div>
                     </div>
+                  ))}
+                </div>
+                {minhasAulas.length > 3 && (
+                  <div className="hp-ver-todas-container">
+                    <button
+                      className="btn btn--outline"
+                      onClick={() => setMostrarTodasAulas(!mostrarTodasAulas)}
+                    >
+                      {mostrarTodasAulas ? 'Ver menos' : `Ver todas (${minhasAulas.length})`}
+                    </button>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </section>
 

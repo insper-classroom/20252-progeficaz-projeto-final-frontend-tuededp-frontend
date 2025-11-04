@@ -300,108 +300,122 @@ const CadastroProfessor = () => {
           <p className="cadastro-subtitle">Preencha os dados para criar sua conta de professor</p>
 
           <form className="cadastro-form" onSubmit={handleSubmit}>
-            {/* linha 1 */}
-            <div className="form-row">
-              <div className="form-group">
-                <label>Nome completo</label>
-                <input name="nome" value={formData.nome} onChange={handleInputChange} required className={`form-input ${errors.nome? 'error':''}`} />
-                {errors.nome && <div className="error-message">{errors.nome}</div>}
+            {/* Seção 1: Dados Pessoais */}
+            <div className="form-section">
+              <h2 className="section-title">Dados Pessoais</h2>
+              <p className="section-description">Informações básicas para identificação e contato</p>
+              
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Nome completo</label>
+                  <input name="nome" value={formData.nome} onChange={handleInputChange} required className={`form-input ${errors.nome? 'error':''}`} />
+                  {errors.nome && <div className="error-message">{errors.nome}</div>}
+                </div>
+                <div className="form-group">
+                  <label>E-mail</label>
+                  <input name="email" type="email" value={formData.email} onChange={handleInputChange} required className={`form-input ${errors.email? 'error':''}`} />
+                  {errors.email && <div className="error-message">{errors.email}</div>}
+                </div>
               </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Telefone</label>
+                  <input name="telefone" value={formData.telefone} onChange={(e) => setField('telefone', applyMaskForField('telefone', e.target.value))} className="form-input" />
+                </div>
+                <div className="form-group">
+                  <label>CPF</label>
+                  <input name="cpf" value={formData.cpf} onChange={(e) => setField('cpf', applyMaskForField('cpf', e.target.value))} className="form-input" />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Área de especialização</label>
+                  <select name="area" value={formData.area} onChange={handleInputChange} className="form-input">
+                    <option value="">Selecione uma área</option>
+                    <option>Programação</option><option>Matemática</option><option>Física</option><option>Química</option>
+                    <option>Biologia</option><option>História</option><option>Geografia</option><option>Português</option>
+                    <option>Inglês</option><option>Filosofia</option><option>Sociologia</option><option>Educação Física</option>
+                    <option>Artes</option><option>Outros</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Data de nascimento</label>
+                  <input name="data_nascimento" type="date" value={formData.data_nascimento} onChange={handleInputChange} className="form-input" />
+                </div>
+              </div>
+
               <div className="form-group">
-                <label>E-mail</label>
-                <input name="email" type="email" value={formData.email} onChange={handleInputChange} required className={`form-input ${errors.email? 'error':''}`} />
-                {errors.email && <div className="error-message">{errors.email}</div>}
+                <label>Histórico Acadêmico e Profissional</label>
+                <textarea name="historico_academico_profissional" value={formData.historico_academico_profissional} onChange={handleInputChange} className="form-input form-textarea" rows="4" />
+              </div>
+
+              <div className="form-group">
+                <label>Endereço</label>
+                <input name="endereco" value={formData.endereco} onChange={handleInputChange} className="form-input" placeholder="Rua, número, cidade, estado" />
               </div>
             </div>
 
-            {/* linha 2 */}
-            <div className="form-row">
-              <div className="form-group">
-                <label>Telefone</label>
-                <input name="telefone" value={formData.telefone} onChange={(e) => setField('telefone', applyMaskForField('telefone', e.target.value))} className="form-input" />
+            {/* Seção 2: Informações Profissionais */}
+            <div className="form-section">
+              <h2 className="section-title">Informações Profissionais</h2>
+              <p className="section-description">Detalhes sobre suas especialidades, disponibilidade e valores</p>
+              
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Especializações (separadas por vírgula)</label>
+                  <input name="especializacoes" value={formData.especializacoes} onChange={handleInputChange} className="form-input" placeholder="Cálculo, Física, Python" />
+                </div>
+                <div className="form-group">
+                  <label>Quero ensinar (separadas por vírgula)</label>
+                  <input name="quer_ensinar" value={formData.quer_ensinar} onChange={handleInputChange} className="form-input" placeholder="Cálculo I, Álgebra" />
+                </div>
               </div>
-              <div className="form-group">
-                <label>CPF</label>
-                <input name="cpf" value={formData.cpf} onChange={(e) => setField('cpf', applyMaskForField('cpf', e.target.value))} className="form-input" />
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Modalidades (separadas por vírgula)</label>
+                  <input name="modalidades" value={formData.modalidades} onChange={handleInputChange} className="form-input" placeholder="Online, Presencial" />
+                </div>
+                <div className="form-group">
+                  <label>Idiomas (separados por vírgula)</label>
+                  <input name="idiomas" value={formData.idiomas} onChange={handleInputChange} className="form-input" placeholder="PT-BR, EN-B2" />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Valor / Hora (R$)</label>
+                  <input name="valor_hora" type="text" inputMode="decimal" value={formData.valor_hora} onChange={(e) => setField('valor_hora', applyMaskForField('valor_hora', e.target.value))} className="form-input" placeholder="Ex: 50.00" />
+                </div>
+                <div className="form-group">
+                  <label>Disponibilidade - Fuso Horário</label>
+                  <input name="disponibilidade_timezone" value={formData.disponibilidade_timezone} onChange={handleInputChange} className="form-input" placeholder="America/Sao_Paulo" />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Disponibilidade - Dias (separados por vírgula)</label>
+                  <input name="disponibilidade_dias" value={formData.disponibilidade_dias} onChange={(e) => setField('disponibilidade_dias', applyMaskForField('disponibilidade_dias', e.target.value))} className="form-input" placeholder="Segunda, Terça, Quarta" />
+                </div>
+                <div className="form-group">
+                  <label>Disponibilidade - Horários (separados por vírgula)</label>
+                  <input name="disponibilidade_horarios" value={formData.disponibilidade_horarios} onChange={(e) => setField('disponibilidade_horarios', applyMaskForField('disponibilidade_horarios', e.target.value))} className="form-input" placeholder="09:00-12:00, 14:00-18:00" />
+                </div>
               </div>
             </div>
 
-            {/* linha 3 */}
-            <div className="form-row">
+            {/* Seção 3: Experiências e Formação */}
+            <div className="form-section">
+              <h2 className="section-title">Experiências e Formação</h2>
+              <p className="section-description">Adicione suas experiências profissionais, formação acadêmica, certificações e projetos relevantes</p>
+              
+              {/* experiências (opcional, não apenas trabalho) */}
               <div className="form-group">
-                <label>Área de especialização</label>
-                <select name="area" value={formData.area} onChange={handleInputChange} className="form-input">
-                  <option value="">Selecione uma área</option>
-                  <option>Programação</option><option>Matemática</option><option>Física</option><option>Química</option>
-                  <option>Biologia</option><option>História</option><option>Geografia</option><option>Português</option>
-                  <option>Inglês</option><option>Filosofia</option><option>Sociologia</option><option>Educação Física</option>
-                  <option>Artes</option><option>Outros</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Data de nascimento</label>
-                <input name="data_nascimento" type="date" value={formData.data_nascimento} onChange={handleInputChange} className="form-input" />
-              </div>
-            </div>
-
-            {/* histórico */}
-            <div className="form-group">
-              <label>Histórico Acadêmico e Profissional</label>
-              <textarea name="historico_academico_profissional" value={formData.historico_academico_profissional} onChange={handleInputChange} className="form-input form-textarea" rows="4" />
-            </div>
-
-            {/* listas simples */}
-            <div className="form-row">
-              <div className="form-group">
-                <label>Especializações (vírgula)</label>
-                <input name="especializacoes" value={formData.especializacoes} onChange={handleInputChange} className="form-input" placeholder="Cálculo, Física, Python" />
-              </div>
-              <div className="form-group">
-                <label>Quero ensinar (vírgula)</label>
-                <input name="quer_ensinar" value={formData.quer_ensinar} onChange={handleInputChange} className="form-input" placeholder="Cálculo I, Álgebra" />
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>Modalidades (vírgula)</label>
-                <input name="modalidades" value={formData.modalidades} onChange={handleInputChange} className="form-input" placeholder="Online, Presencial" />
-              </div>
-              <div className="form-group">
-                <label>Idiomas (vírgula)</label>
-                <input name="idiomas" value={formData.idiomas} onChange={handleInputChange} className="form-input" placeholder="PT-BR, EN-B2" />
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>Valor / Hora (R$)</label>
-                <input name="valor_hora" type="text" inputMode="decimal" value={formData.valor_hora} onChange={(e) => setField('valor_hora', applyMaskForField('valor_hora', e.target.value))} className="form-input" />
-              </div>
-
-              <div className="form-group">
-                <label>Disponibilidade - fuso</label>
-                <input name="disponibilidade_timezone" value={formData.disponibilidade_timezone} onChange={handleInputChange} className="form-input" placeholder="America/Sao_Paulo" />
-                <small className="hint">Dias (vírgula) e Horários (vírgula) abaixo</small>
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>Disponibilidade - dias (vírgula)</label>
-                <input name="disponibilidade_dias" value={formData.disponibilidade_dias} onChange={(e) => setField('disponibilidade_dias', applyMaskForField('disponibilidade_dias', e.target.value))} className="form-input" placeholder="Segunda, Terça, Quarta" />
-              </div>
-              <div className="form-group">
-                <label>Disponibilidade - horários (vírgula)</label>
-                <input name="disponibilidade_horarios" value={formData.disponibilidade_horarios} onChange={(e) => setField('disponibilidade_horarios', applyMaskForField('disponibilidade_horarios', e.target.value))} className="form-input" placeholder="09:00-12:00, 14:00-18:00" />
-              </div>
-            </div>
-
-            {/* experiências (opcional, não apenas trabalho) */}
-            <div className="form-group" style={{ marginBottom: 10 }}>
-              <label>Experiências (opcional)</label>
-              <p className="hint">Descreva experiências relevantes — como projetos, ensino, pesquisa, eventos ou trabalhos.</p>
+                <label>Experiências (opcional)</label>
+                <p className="hint">Descreva experiências relevantes — como projetos, ensino, pesquisa, eventos ou trabalhos.</p>
 
               {formData.experiencias.map((ex, i) => (
                 <div key={i} className="list-item" style={dynamicBlockStyle}>
@@ -444,14 +458,14 @@ const CadastroProfessor = () => {
                 </div>
               ))}
 
-              <button type="button" onClick={() => addListItem('experiencias', emptyExperience)}>
-                Adicionar experiência
-              </button>
-            </div>
+                <button type="button" onClick={() => addListItem('experiencias', emptyExperience)}>
+                  Adicionar experiência
+                </button>
+              </div>
 
-            {/* formação */}
-            <div className="form-group">
-              <label>Formação</label>
+              {/* formação */}
+              <div className="form-group">
+                <label>Formação</label>
               {formData.formacao.map((f, i) => (
                 <div key={i} className="list-item" style={dynamicBlockStyle}>
                   <input placeholder="Instituição" value={f.instituicao} onChange={e => updateListField('formacao', i, 'instituicao', e.target.value)} className="form-input" />
@@ -466,12 +480,12 @@ const CadastroProfessor = () => {
                   </div>
                 </div>
               ))}
-              <button type="button" onClick={() => addListItem('formacao', emptyFormacao)}>Adicionar formação</button>
-            </div>
+                <button type="button" onClick={() => addListItem('formacao', emptyFormacao)}>Adicionar formação</button>
+              </div>
 
-            {/* certificações */}
-            <div className="form-group">
-              <label>Certificações</label>
+              {/* certificações */}
+              <div className="form-group">
+                <label>Certificações</label>
               {formData.certificacoes.map((c, i) => (
                 <div key={i} className="list-item" style={dynamicBlockStyle}>
                   <input placeholder="Título" value={c.titulo} onChange={e => updateListField('certificacoes', i, 'titulo', e.target.value)} className="form-input" />
@@ -483,12 +497,12 @@ const CadastroProfessor = () => {
                   </div>
                 </div>
               ))}
-              <button type="button" onClick={() => addListItem('certificacoes', emptyCert)}>Adicionar certificação</button>
-            </div>
+                <button type="button" onClick={() => addListItem('certificacoes', emptyCert)}>Adicionar certificação</button>
+              </div>
 
-            {/* projetos */}
-            <div className="form-group">
-              <label>Projetos</label>
+              {/* projetos */}
+              <div className="form-group">
+                <label>Projetos</label>
               {formData.projetos.map((p, i) => (
                 <div key={i} className="list-item" style={dynamicBlockStyle}>
                   <input placeholder="Título" value={p.titulo} onChange={e => updateListField('projetos', i, 'titulo', e.target.value)} className="form-input" />
@@ -499,35 +513,43 @@ const CadastroProfessor = () => {
                   </div>
                 </div>
               ))}
-              <button type="button" onClick={() => addListItem('projetos', emptyProjeto)}>Adicionar projeto</button>
+                <button type="button" onClick={() => addListItem('projetos', emptyProjeto)}>Adicionar projeto</button>
+              </div>
             </div>
 
-            {/* links */}
-            <div className="form-row">
-              <div className="form-group">
-                <label>LinkedIn</label>
-                <input name="links_linkedin" value={formData.links_linkedin} onChange={(e) => setField('links_linkedin', applyMaskForField('links_linkedin', e.target.value))} className="form-input" />
+            {/* Seção 4: Links e Senha */}
+            <div className="form-section">
+              <h2 className="section-title">Links e Segurança</h2>
+              <p className="section-description">Adicione seus links profissionais e defina uma senha segura</p>
+              
+              {/* links */}
+              <div className="form-row">
+                <div className="form-group">
+                  <label>LinkedIn</label>
+                  <input name="links_linkedin" value={formData.links_linkedin} onChange={(e) => setField('links_linkedin', applyMaskForField('links_linkedin', e.target.value))} className="form-input" placeholder="https://linkedin.com/in/seu-perfil" />
+                </div>
+                <div className="form-group">
+                  <label>GitHub</label>
+                  <input name="links_github" value={formData.links_github} onChange={(e) => setField('links_github', applyMaskForField('links_github', e.target.value))} className="form-input" placeholder="https://github.com/seu-usuario" />
+                </div>
               </div>
-              <div className="form-group">
-                <label>GitHub</label>
-                <input name="links_github" value={formData.links_github} onChange={(e) => setField('links_github', applyMaskForField('links_github', e.target.value))} className="form-input" />
-              </div>
+
               <div className="form-group">
                 <label>Site / Portfólio</label>
-                <input name="links_site" value={formData.links_site} onChange={(e) => setField('links_site', applyMaskForField('links_site', e.target.value))} className="form-input" />
+                <input name="links_site" value={formData.links_site} onChange={(e) => setField('links_site', applyMaskForField('links_site', e.target.value))} className="form-input" placeholder="https://seusite.com.br" />
+              </div>
+
+              {/* senha */}
+              <div className="form-group">
+                <label>Senha</label>
+                <input name="senha" type="password" value={formData.senha} onChange={handleInputChange} className={`form-input ${errors.senha? 'error':''}`} required />
+                {errors.senha && <div className="error-message">{errors.senha}</div>}
               </div>
             </div>
 
-            {/* senha e ações */}
-            <div className="form-group">
-              <label>Senha</label>
-              <input name="senha" type="password" value={formData.senha} onChange={handleInputChange} className={`form-input ${errors.senha? 'error':''}`} required />
-              {errors.senha && <div className="error-message">{errors.senha}</div>}
-            </div>
-
-            <div style={{display:'flex', gap:12, marginTop:12}}>
+            {/* Ações finais */}
+            <div style={{display:'flex', gap:12, marginTop:32}}>
               <button type="submit" className="cadastro-button" disabled={loading}>{loading ? 'CRIANDO CONTA...' : 'CRIAR CONTA DE PROFESSOR'}</button>
-              <button type="button" className="btn--outline" onClick={() => navigate('/cadastro-escolha')}>Voltar</button>
             </div>
           </form>
         </div>

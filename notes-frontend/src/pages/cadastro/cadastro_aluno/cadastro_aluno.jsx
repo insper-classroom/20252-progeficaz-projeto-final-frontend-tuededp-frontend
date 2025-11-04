@@ -365,17 +365,6 @@ const CadastroAluno = () => {
             >
               {loading ? 'CRIANDO CONTA...' : 'CRIAR CONTA DE ALUNO'}
             </button>
-
-            {/* 🔹 Botão Voltar adicionado */}
-            <div style={{ textAlign: 'center', marginTop: '16px' }}>
-              <button
-                type="button"
-                className="btn--outline"
-                onClick={() => navigate('/cadastro-escolha')}
-              >
-                Voltar
-              </button>
-            </div>
           </form>
         </div>
       </main>

@@ -47,7 +47,7 @@ export default function Login() {
         <section className="auth-card">
           <header className="auth-head">
             <h1>Entrar</h1>
-            <p>Acesse sua conta para continuar seus estudos.</p>
+            <p>Acesse sua conta para estudar ou ensinar.</p>
           </header>
 
           {error && (
@@ -98,8 +98,8 @@ export default function Login() {
         {/* Lado visual (opcional) para manter o “clima LinkedIn Learning” */}
         <aside className="auth-figure" aria-hidden="true">
           <div className="figure-card">
-            <h3>Aprenda no seu ritmo</h3>
-            <p>Trilhas, aulas curtas, certificados e professores verificados.</p>
+            <h3>Aprenda e ensine no seu ritmo</h3>
+            <p>Trilhas, aulas curtas, certificados, professores verificados e oportunidades para ensinar.</p>
           </div>
         </aside>
       </main>

@@ -26,7 +26,7 @@ export default function CadastroEscolha() {
               aria-label="Cadastrar como aluno"
               type="button"
             >
-              <div className="choice-badge" style={{ background: "#2B6CB0" }}>A</div>
+              <div className="choice-badge" style={{ background: "#3b82f6" }}>A</div>
               <div>
                 <p className="choice-title">Aluno</p>
                 <p className="choice-desc">Acesso a cursos, trilhas e avaliações.</p>
@@ -39,7 +39,7 @@ export default function CadastroEscolha() {
               aria-label="Cadastrar como professor"
               type="button"
             >
-              <div className="choice-badge" style={{ background: "#16A34A" }}>P</div>
+              <div className="choice-badge" style={{ background: "#0A66C2" }}>P</div>
               <div>
                 <p className="choice-title">Professor</p>
                 <p className="choice-desc">Crie e gerencie cursos e aulas.</p>
@@ -47,35 +47,27 @@ export default function CadastroEscolha() {
             </button>
           </div>
 
-          {/* Ações: só Voltar */}
-          <div className="choice-actions">
-            <button
-              className="btn--outline"
-              onClick={() => navigate('/')}
-              type="button"
-            >
-              Voltar
-            </button>
-          </div>
-
           {/* Meta: 'Já tem conta? Entrar' — Entrar é link simples com underline no hover */}
           <div className="choice-meta">
             Já tem conta?{" "}
-            <button
-              className="link-plain meta-link"
-              onClick={() => navigate("/login")}
-              type="button"
+            <a
+              className="meta-link"
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("/login");
+              }}
             >
               Entrar
-            </button>
+            </a>
           </div>
         </section>
 
         {/* opção visual escondida por padrão (mantive estrutura) */}
         <aside className="choice-figure" aria-hidden="true">
           <div className="figure-card">
-            <h3>Aprenda no seu ritmo</h3>
-            <p>Trilhas, aulas curtas, certificados e professores verificados.</p>
+            <h3>Aprenda e ensine no seu ritmo</h3>
+            <p>Trilhas, aulas curtas, certificados, professores verificados e oportunidades para ensinar.</p>
           </div>
         </aside>
       </main>

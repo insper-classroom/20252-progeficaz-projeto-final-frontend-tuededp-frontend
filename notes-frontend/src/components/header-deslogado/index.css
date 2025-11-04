@@ -39,14 +39,39 @@
   cursor:pointer;
   transition: transform .18s ease;
   will-change: transform;
+  outline: none;
+  border: none;
 }
-.logo:hover{ transform: translateY(-1px); }
+.logo:hover{ 
+  transform: translateY(-1px);
+  outline: none;
+  border: none;
+}
+.logo:focus,
+.logo:focus-visible{
+  outline: none;
+  border: none;
+  box-shadow: none;
+}
 
 .logo-icon{
   width: 36px; height: 36px;
   display:grid; place-items:center;
 }
-.logo-icon img{ width:100%; height:100%; object-fit:contain; }
+.logo-icon img{ 
+  width:100%; 
+  height:100%; 
+  object-fit:contain;
+  outline: none;
+  border: none;
+}
+.logo:hover .logo-icon img,
+.logo:focus .logo-icon img,
+.logo:focus-visible .logo-icon img{
+  outline: none;
+  border: none;
+  box-shadow: none;
+}
 
 .logo-text{
   font-family: "Montserrat", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
