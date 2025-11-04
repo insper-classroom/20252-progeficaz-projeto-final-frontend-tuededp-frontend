@@ -49,6 +49,7 @@ export default function PerfilPublico() {
   const [avaliacoes, setAvaliacoes] = React.useState([]);
 
   const isProfessor = location.pathname.startsWith("/professor/");
+  const roleLabel = isProfessor ? "Professor" : "Aluno";
   const me = getUser();
 
   React.useEffect(() => {
@@ -148,7 +149,12 @@ export default function PerfilPublico() {
         <section className="pp-card pp-header">
           <img className="pp-avatar" src={usuario.avatar_url || "/avatar-placeholder.png"} alt={usuario.nome} />
           <div className="pp-id">
-            <h1>{usuario.nome}</h1>
+            <div className="pp-name-row">
+              <h1>{usuario.nome}</h1>
+              <span className={`role-pill ${isProfessor ? "prof" : "aluno"}`} aria-label={`Tipo: ${roleLabel}`}>
+                {roleLabel}
+              </span>
+            </div>
             {usuario.headline && <p className="pp-headline">{usuario.headline}</p>}
             {usuario.endereco?.cidade && (
               <p className="pp-local">

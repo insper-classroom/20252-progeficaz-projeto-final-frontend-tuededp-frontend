@@ -267,3 +267,33 @@
   .pp-actions{ gap: 8px; }
   .btn{ width: 100%; justify-content: center; }
 }
+/* Nome + badge */
+.pp-name-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+/* Badge de papel (Aluno/Professor) */
+.role-pill{
+  display:inline-flex;
+  align-items:center;
+  padding:4px 10px;
+  border-radius:999px;
+  font:700 12px/1 "Montserrat", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  letter-spacing:.02em;
+  border:1px solid transparent;
+}
+
+/* Cores: pode ajustar se quiser */
+.role-pill.aluno{
+  color:#4F46E5;                 /* indigo-600 */
+  background:#EEF2FF;            /* indigo-100 */
+  border-color:#E0E7FF;          /* indigo-200 */
+}
+.role-pill.prof{
+  color:#047857;                 /* emerald-700 */
+  background:#ECFDF5;            /* emerald-50  */
+  border-color:#A7F3D0;          /* emerald-200 */
+}
